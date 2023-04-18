@@ -24,8 +24,6 @@ using spongebob::ReadReply;
 // using spongebob::WriteRequest;
 // using spongebob::WriteReply;
 
-ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
-
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
@@ -67,8 +65,3 @@ void RunServer(uint16_t port) {
   server->Wait();
 }
 
-int main(int argc, char** argv) {
-  absl::ParseCommandLine(argc, argv);
-  RunServer(absl::GetFlag(FLAGS_port));
-  return 0;
-}

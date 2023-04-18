@@ -94,11 +94,25 @@ link_libraries(${CRYPTO_LIBRARIES} ${CMAKE_DL_LIBS})
 set(FS_SRC ${PROJECT_SOURCE_DIR}/src/fs)
 set(NET_SRC ${PROJECT_SOURCE_DIR}/src/net)
 set(TOOLS_SRC ${PROJECT_SOURCE_DIR}/src/tools)
+set(SERVER_SRC ${PROJECT_SOURCE_DIR}/src/server)
+
 
 # Build server
 file(GLOB_RECURSE SERVER_SRC ${FS_SRC}/*.cpp ${FS_SRC}/*.c ${NET_SRC}/*.cpp ${TOOLS_SRC}/*.cpp)
-add_executable(dmfs ${SERVER_SRC})
+add_executable(dmfs ${PROJECT_SOURCE_DIR}/src/server/dmfs.cpp ${SERVER_SRC})
 target_link_libraries(dmfs
+  Threads::Threads
+  sf_grpc_proto
+  absl::flags
+  absl::flags_parse
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF}
+)
+
+# Build server
+add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${FS_SRC}/meta.cpp)
+target_link_libraries(metaserver
   Threads::Threads
   sf_grpc_proto
   absl::flags
@@ -107,19 +121,19 @@ target_link_libraries(dmfs
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
-file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
-foreach(GRPC_TESTSRC
-  ${GRPC_TESTS_SOURCES})
-  get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
-  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC})
-  target_link_libraries(${GRPC_TESTSRC_NAME}
-    sf_grpc_proto
-    absl::flags
-    absl::flags_parse
-    ${_REFLECTION}
-    ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF})
-endforeach()
+# file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
+# foreach(GRPC_TESTSRC
+#   ${GRPC_TESTS_SOURCES})
+#   get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
+#   add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC})
+#   target_link_libraries(${GRPC_TESTSRC_NAME}
+#     sf_grpc_proto
+#     absl::flags
+#     absl::flags_parse
+#     ${_REFLECTION}
+#     ${_GRPC_GRPCPP}
+#     ${_PROTOBUF_LIBPROTOBUF})
+# endforeach()
 
 # Build client library
 set(CLIENT_BASE ${PROJECT_SOURCE_DIR}/client)
@@ -139,6 +153,7 @@ target_link_libraries(nrfsc
 link_libraries(nrfsc)
 
 file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
+message("${TEST_SOURCES}")
 foreach (TSTSRC ${TEST_SOURCES})
     get_filename_component(TSTNAME ${TSTSRC} NAME_WE)
     add_executable(${TSTNAME} ${TSTSRC})

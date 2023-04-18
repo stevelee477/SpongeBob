@@ -12,7 +12,6 @@ using spongebob::ReadReply;
 // using spongebob::WriteRequest;
 // using spongebob::WriteReply;
 
-ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 // __thread struct  timeval startt, endd;
 RPCServer::RPCServer(int _cqSize) :cqSize(_cqSize) {
 	mm = 0;
