@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package spongebob;
+
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc ReadFile (ReadRequest) returns (ReadReply) {}
+  // rpc Write (WriteRequest) returns (WriteReply) {}
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+message ReadRequest {
+  string name = 1;
+  uint64 offset = 2;
+  uint64 length = 3;
+}
+
+message FileData {
+  uint64  serverid = 1;
+  uint64 offset = 2;
+  uint64 length = 3;
+}
+
+message ReadReply {
+  repeated FileData data_list = 1;
+}
+
+message WriteRequest {
+  string name = 1;
+  uint64 offset = 2;
+  bytes data = 3;
+}
+
+message WriteReply {
+  repeated FileData data_list = 1;
+}
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
