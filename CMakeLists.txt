@@ -85,8 +85,8 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 # Incs and Libs
-set(INCLUDE_BASE ${PROJECT_SOURCE_DIR}/include)
-include_directories("/usr/local/ofed/include" ${INCLUDE_BASE})
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories("/usr/local/ofed/include")
 link_libraries(${CRYPTO_LIBRARIES} ${CMAKE_DL_LIBS})
 #message("---: ${CRYPTO_LIBRARIES}")
 

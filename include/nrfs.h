@@ -149,5 +149,5 @@ int nrfsTest(nrfs fs, int offset);
 int nrfsRawWrite(nrfs fs, nrfsFile file, const void* buffer, uint64_t size, uint64_t offset);
 int nrfsRawRead(nrfs fs, nrfsFile file, void* buffer, uint64_t size, uint64_t offset);
 int nrfsRawRPC(nrfs fs);
-int nrfsMetaRPC(nrfs fs);
+string nrfsMetaRPC(nrfs fs);
 #endif

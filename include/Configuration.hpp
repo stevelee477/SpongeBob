@@ -30,6 +30,7 @@ public:
 	uint16_t getIDbyIP(string ip);
 	unordered_map<uint16_t, string> getInstance();
 	int getServerCount();
+	string metaip;
 };
 
 #endif

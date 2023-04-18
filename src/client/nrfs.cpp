@@ -959,6 +959,6 @@ int nrfsRawRPC(nrfs fs)
 	return 0;
 }
 
-int nrfsMetaRPC(nrfs fs) {
-	client->callMetaRPC();
+string nrfsMetaRPC(nrfs fs) {
+	return client->metaHello();
 }

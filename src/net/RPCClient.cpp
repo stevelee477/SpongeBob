@@ -2,19 +2,6 @@
 #include "TxManager.hpp"
 
 
-
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
-using spongebob::Greeter;
-using spongebob::HelloReply;
-using spongebob::HelloRequest;
-using spongebob::ReadRequest;
-using spongebob::ReadReply;
-using spongebob::WriteRequest;
-using spongebob::WriteReply;
-
-
 RPCClient::RPCClient(Configuration *_conf, RdmaSocket *_socket, MemoryManager *_mem, uint64_t _mm)
 :conf(_conf), socket(_socket), mem(_mem), mm(_mm) {
 	isServer = true;
@@ -28,6 +15,7 @@ RPCClient::RPCClient() {
 	conf = new Configuration();
 	socket = new RdmaSocket(1, mm, (1024 * 4 + 1024 * 1024 * 4), conf, false, 0);
 	socket->RdmaConnect();
+	metaclient = new GreeterClient(grpc::CreateChannel(conf->metaip, grpc::InsecureChannelCredentials()));
 }
 
 RPCClient::~RPCClient() {
@@ -131,21 +119,7 @@ uint64_t RPCClient::ContractSendBuffer(GeneralSendBuffer *send) {
 	return length;
 }
 
-uint64_t RPCClient::callMetaRPC() {
-	auto channel = grpc::CreateChannel("localhost:50051",
-			grpc::InsecureChannelCredentials());
-	auto stub_ = spongebob::Greeter::NewStub(channel);
-	spongebob::HelloRequest request;
-	request.set_name("world");
-	spongebob::HelloReply reply;
-	grpc::ClientContext context;
-	grpc::Status status = stub_->SayHello(&context, request, &reply);
-	if (status.ok()) {
-		std::cout << reply.message() << std::endl;
-	} else {
-		std::cout << status.error_code() << ": " << status.error_message()
-				<< std::endl;
-		std::cout << "RPC failed" << std::endl;
-	}
-	return 0;
+std::string RPCClient::metaHello() {
+	// test meta server only
+	return metaclient->SayHello("wwww");
 }
