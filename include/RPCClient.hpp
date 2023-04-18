@@ -36,6 +36,7 @@ public:
 	Configuration* getConfInstance();
 	bool RdmaCall(uint16_t DesNodeID, char *bufferSend, uint64_t lengthSend, char *bufferReceive, uint64_t lengthReceive);
 	uint64_t ContractSendBuffer(GeneralSendBuffer *send);
+	uint64_t callMetaRPC();
 };
 
 #endif

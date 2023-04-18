@@ -98,7 +98,7 @@ set(SERVER_SRC ${PROJECT_SOURCE_DIR}/src/server)
 
 
 # Build server
-file(GLOB_RECURSE SERVER_SRC ${FS_SRC}/*.cpp ${FS_SRC}/*.c ${NET_SRC}/*.cpp ${TOOLS_SRC}/*.cpp)
+file(GLOB_RECURSE SERVER_SRC ${FS_SRC}/*.cpp ${FS_SRC}/*.c ${NET_SRC}/*.cpp ${TOOLS_SRC}/*.cpp )
 add_executable(dmfs ${PROJECT_SOURCE_DIR}/src/server/dmfs.cpp ${SERVER_SRC})
 target_link_libraries(dmfs
   Threads::Threads
@@ -111,8 +111,7 @@ target_link_libraries(dmfs
 )
 
 # Build server
-# add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${NET_SRC}/MetaServer.cpp)
-add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${SERVER_SRC})
+add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${SERVER_SRC} ${PROJECT_SOURCE_DIR}/src/metadata/MetaServer.cpp)
 target_link_libraries(metaserver
   Threads::Threads
   sf_grpc_proto
@@ -142,8 +141,8 @@ set(CLIENT_BASE ${PROJECT_SOURCE_DIR}/client)
 set(CNET_SRC ${PROJECT_SOURCE_DIR}/src/net)
 set(CLIB_SRC ${PROJECT_SOURCE_DIR}/src/client)
 file(GLOB_RECURSE NRFS_LIB_SRC ${CNET_SRC}/*.cpp ${CLIB_SRC}/*.cpp ${TOOLS_SRC}/*.cpp ${FS_SRC}/*.cpp)
-list(REMOVE_ITEM NRFS_LIB_SRC ${CNET_SRC}/MetaServer.cpp)
-add_library(nrfsc SHARED ${NRFS_LIB_SRC})
+# add_library(nrfsc SHARED ${NRFS_LIB_SRC})
+add_library(nrfsc ${NRFS_LIB_SRC}) # Disable shared for now
 target_link_libraries(nrfsc
   Threads::Threads
   sf_grpc_proto

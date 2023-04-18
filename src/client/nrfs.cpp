@@ -958,3 +958,7 @@ int nrfsRawRPC(nrfs fs)
 	//net.post_write(rdma.find_res_by_id(1), 1024, src_addr, dst_addr, -1);
 	return 0;
 }
+
+int nrfsMetaRPC(nrfs fs) {
+	client->callMetaRPC();
+}

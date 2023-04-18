@@ -3,8 +3,6 @@
 
 
 
-ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
-ABSL_FLAG(std::string, user, "world", "The user's name");
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
@@ -131,4 +129,23 @@ uint64_t RPCClient::ContractSendBuffer(GeneralSendBuffer *send) {
 	}
 	// printf("contract length = %d", (int)length);
 	return length;
+}
+
+uint64_t RPCClient::callMetaRPC() {
+	auto channel = grpc::CreateChannel("localhost:50051",
+			grpc::InsecureChannelCredentials());
+	auto stub_ = spongebob::Greeter::NewStub(channel);
+	spongebob::HelloRequest request;
+	request.set_name("world");
+	spongebob::HelloReply reply;
+	grpc::ClientContext context;
+	grpc::Status status = stub_->SayHello(&context, request, &reply);
+	if (status.ok()) {
+		std::cout << reply.message() << std::endl;
+	} else {
+		std::cout << status.error_code() << ": " << status.error_message()
+				<< std::endl;
+		std::cout << "RPC failed" << std::endl;
+	}
+	return 0;
 }
