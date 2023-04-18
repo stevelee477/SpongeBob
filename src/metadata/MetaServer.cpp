@@ -10,8 +10,10 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
+#include "file.hpp"
+#include "spacemanager.hpp"
 #include "spongebob.grpc.pb.h"
-
+// #include
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -26,6 +28,7 @@ using spongebob::ReadReply;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
+public:
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
     std::string prefix("Hello ");
@@ -42,6 +45,9 @@ class GreeterServiceImpl final : public Greeter::Service {
     }
     return Status::OK;
   }
+private:
+  std::unique_ptr<InodeTable> inode_table_;
+  std::unique_ptr<SpaceManager> space_manager_;
 };
 
 void RunServer(uint16_t port) {
@@ -64,4 +70,3 @@ void RunServer(uint16_t port) {
   // responsible for shutting down the server for this call to ever return.
   server->Wait();
 }
-

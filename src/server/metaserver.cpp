@@ -3,6 +3,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
+#include "file.hpp"
 
 void RunServer(uint16_t port);
 // RPCServer *server; // filesystem.cpp used  server
