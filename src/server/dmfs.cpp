@@ -2,7 +2,7 @@
 #include <sys/wait.h>  
 #include <sys/types.h>
 
-RPCServer *server;
+extern RPCServer *server;
 
 /* Catch ctrl-c and destruct. */
 void Stop (int signo) {

@@ -111,7 +111,8 @@ target_link_libraries(dmfs
 )
 
 # Build server
-add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${FS_SRC}/meta.cpp)
+# add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${NET_SRC}/MetaServer.cpp)
+add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${SERVER_SRC})
 target_link_libraries(metaserver
   Threads::Threads
   sf_grpc_proto
@@ -121,25 +122,27 @@ target_link_libraries(metaserver
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
-# file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
-# foreach(GRPC_TESTSRC
-#   ${GRPC_TESTS_SOURCES})
-#   get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
-#   add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC})
-#   target_link_libraries(${GRPC_TESTSRC_NAME}
-#     sf_grpc_proto
-#     absl::flags
-#     absl::flags_parse
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-# endforeach()
+# greeter_client.cc
+file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
+foreach(GRPC_TESTSRC
+  ${GRPC_TESTS_SOURCES})
+  get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
+  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC})
+  target_link_libraries(${GRPC_TESTSRC_NAME}
+    sf_grpc_proto
+    absl::flags
+    absl::flags_parse
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endforeach()
 
 # Build client library
 set(CLIENT_BASE ${PROJECT_SOURCE_DIR}/client)
 set(CNET_SRC ${PROJECT_SOURCE_DIR}/src/net)
 set(CLIB_SRC ${PROJECT_SOURCE_DIR}/src/client)
 file(GLOB_RECURSE NRFS_LIB_SRC ${CNET_SRC}/*.cpp ${CLIB_SRC}/*.cpp ${TOOLS_SRC}/*.cpp ${FS_SRC}/*.cpp)
+list(REMOVE_ITEM NRFS_LIB_SRC ${CNET_SRC}/MetaServer.cpp)
 add_library(nrfsc SHARED ${NRFS_LIB_SRC})
 target_link_libraries(nrfsc
   Threads::Threads
@@ -160,4 +163,4 @@ foreach (TSTSRC ${TEST_SOURCES})
 endforeach()
 
 
-add_subdirectory(src/testfuse)
+# add_subdirectory(src/testfuse)

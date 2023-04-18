@@ -5,7 +5,7 @@
 /** Included files. **/
 #include "filesystem.hpp"
 #include "RPCServer.hpp"
-extern RPCServer *server;
+RPCServer *server;
 bool Dotx = true;
 uint64_t TxLocalBegin() {
     if (!Dotx)
