@@ -145,4 +145,4 @@ foreach (TSTSRC ${TEST_SOURCES})
 endforeach()
 
 
-add_subdirectory(testfuse)
+add_subdirectory(src/testfuse)
