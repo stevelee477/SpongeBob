@@ -1,12 +1,16 @@
 #include "spacemanager.hpp"
+#include <numeric>
 
 SpaceManager::SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t block_size)
     :space_start_(space_start), space_end_(space_end), block_size_(block_size), cur_blocks_(0) {
     total_bytes_ = space_end_ - space_start_ + 1;
     total_blocks_ = total_bytes_ / block_size_;
-    for (uint64_t i = 0; i < total_blocks_; ++i) {
-        free_list_.push(i);
-    }
+    std::vector<uint64_t> vec(total_blocks_);
+    std::iota(vec.begin(), vec.end(), 0);
+    // for (uint64_t i = 0; i < total_blocks_; ++i) {
+    //     vec[i] = i;
+    // }
+    free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin(), vec.end());
 }
 
 std::vector<uint64_t> SpaceManager::AllocateSpace(uint64_t length) {

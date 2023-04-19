@@ -1,4 +1,5 @@
 #include "MetaClient.hpp"
+#include "spongebob.pb.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -10,6 +11,8 @@ using spongebob::ReadReply;
 using spongebob::ReadRequest;
 using spongebob::WriteReply;
 using spongebob::WriteRequest;
+using spongebob::ListDirectoryReply;
+using spongebob::ListDirectoryRequest;
 
 GreeterClient::GreeterClient(std::shared_ptr<Channel> channel)
     : stub_(Greeter::NewStub(channel)) {}
@@ -44,30 +47,76 @@ std::string GreeterClient::SayHello(const std::string &user) {
 int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
                             uint64_t length) {
   ReadRequest read_request;
-  int res = 0;
+  // int res = 0;
   read_request.set_name(filename);
   read_request.set_offset(offset);
   read_request.set_length(length);
   ReadReply read_reply;
   ClientContext context;
   Status status = stub_->ReadFile(&context, read_request, &read_reply);
-  if (status.ok()) {
-    uint64_t size = read_reply.data_list_size();
-    std::cout << size << " file data blocks received." << std::endl;
-    auto data_list = read_reply.data_list();
-    for (auto cur_block : read_reply.data_list()) {
-      // std::cout << cur_block.get_serverid();
-      std::cout << cur_block.serverid() << std::endl;
-      std::cout << cur_block.offset() << std::endl;
-      std::cout << cur_block.length() << std::endl << std::endl;
-    }
-    return 0;
-  } else {
+
+  if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
     return -1;
-    ;
   }
 
-  return res;
+  uint64_t size = read_reply.data_list_size();
+  std::cout << __func__ << ": " << size << " file data blocks received." << std::endl;
+  auto data_list = read_reply.data_list();
+  for (auto cur_block : read_reply.data_list()) {
+    // std::cout << cur_block.get_serverid();
+    std::cout << cur_block.serverid() << std::endl;
+    std::cout << cur_block.offset() << std::endl;
+    std::cout << cur_block.length() << std::endl << std::endl;
+  }
+  return 0;
+}
+
+int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length) {
+  WriteRequest write_request;
+  write_request.set_name(filename);
+  write_request.set_offset(offset);
+  write_request.set_length(length);
+  WriteReply write_reply;
+  ClientContext context;
+  Status status = stub_->WriteFile(&context, write_request, &write_reply);
+
+  if (!status.ok()) {
+    std::cout << status.error_code() << ": " << status.error_message()
+              << std::endl;
+    return -1;
+  }
+
+  uint64_t size = write_reply.data_list_size();
+  std::cout << __func__ << ": " << size << " file data blocks info received." << std::endl;
+  auto data_list = write_reply.data_list();
+  for (auto cur_block : write_reply.data_list()) {
+    // std::cout << cur_block.get_serverid();
+    std::cout << cur_block.serverid() << std::endl;
+    std::cout << cur_block.offset() << std::endl;
+    std::cout << cur_block.length() << std::endl << std::endl;
+  }
+  return 0;
+}
+
+int GreeterClient::ListDirectory(const std::string &path) {
+  ListDirectoryRequest list_dir_request;
+  list_dir_request.set_path(path);
+  ListDirectoryReply list_dir_reply;
+  ClientContext context;
+  Status status = stub_->ListDirectory(&context, list_dir_request, &list_dir_reply);
+
+  if (!status.ok()) {
+    std::cout << status.error_code() << ": " << status.error_message()
+              << std::endl;
+    return -1;
+  }
+
+  for (auto dentry_info: list_dir_reply.dentry_list()) {
+    dentry_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
+    std::cout << dentry_info.name() << ", " << dentry_info.inum() << ", " << dentry_info.size() << std::endl;
+  }
+
+  return 0;
 }

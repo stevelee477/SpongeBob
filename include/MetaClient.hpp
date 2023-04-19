@@ -17,7 +17,8 @@ public:
   GreeterClient(std::shared_ptr<grpc::Channel> channel);
   std::string SayHello(const std::string &user);
   int ReadFile(const std::string &filename, uint64_t offset, uint64_t length);
-
+  int WriteFile(const std::string &filename, uint64_t offset, uint64_t length);
+  int ListDirectory(const std::string &path);
 private:
   std::unique_ptr<spongebob::Greeter::Stub> stub_;
 };

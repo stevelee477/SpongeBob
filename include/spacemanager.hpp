@@ -16,7 +16,7 @@ public:
     ~SpaceManager();
     std::vector<uint64_t> AllocateSpace(uint64_t length);
     bool ReclaimSpace(std::vector<uint64_t>& block_list);
-
+    inline uint64_t GetFileBlockSize() { return block_size_; }
 
 private:
     std::unordered_set<uint64_t> inused_blocks_;

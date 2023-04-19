@@ -21,18 +21,29 @@ struct file_data_info {
     uint64_t length;
 };
 
-class Dentry;
+class Dentry {
+public:
+    Dentry() = default;
+    Dentry(const std::string& name, uint64_t inum);
+    ~Dentry() = default;
+
+private:
+    std::string name_;
+    uint64_t hash_;
+    uint64_t inum_;
+};
 
 class Inode {
 public:
     Inode() = default;
-    Inode(std::string name, FileType type, uint64_t inum);
+    Inode(FileType type, uint64_t inum);
     ~Inode() = default;
 
     uint64_t GetInodeNum() { return inum_;}
     bool IsDir() { return type_ == FileType::DIR; }
     void SetInodeNum(uint64_t inum) { inum_ = inum; }
-    bool AddDentry(const std::string& name, uint64_t inum);
+    bool AddDentry(const std::string &name, uint64_t inum);
+    Dentry GetDentry(const std::string &name);
 
 private:
     uint64_t inum_;
@@ -42,28 +53,16 @@ private:
     std::vector<file_data_info> data_info_;
 };
 
-class Dentry {
-public:
-    Dentry() = default;
-    Dentry(const std::string& name, uint64_t inum);
-    ~Dentry() = default;
-private:
-    std::string name;
-    uint64_t hash;
-    uint64_t inum;
-};
-
 class InodeTable {
 public:
     InodeTable();
     InodeTable(uint64_t size);
     ~InodeTable() = default;
 
-
-    bool DeleteInode(uint64_t inum);
     uint64_t AllocateFileInode() { return AllocateFreeInode(FileType::REG_FILE); }
     uint64_t AllocateDirInode() { return AllocateFreeInode(FileType::DIR); }
-
+    std::shared_ptr<Inode> GetInode(uint64_t inum);
+    bool DeleteInode(uint64_t inum);
 private:
     uint64_t total_size_;
     uint64_t cur_size_;

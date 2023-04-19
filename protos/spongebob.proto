@@ -7,6 +7,8 @@ service Greeter {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
   rpc ReadFile (ReadRequest) returns (ReadReply) {}
+  rpc WriteFile (WriteRequest) returns (WriteReply) {}
+  rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryReply) {}
   // rpc Write (WriteRequest) returns (WriteReply) {}
 }
 
@@ -21,25 +23,41 @@ message ReadRequest {
   uint64 length = 3;
 }
 
-message FileData {
+message FileBlockInfo {
   uint64  serverid = 1;
   uint64 offset = 2;
   uint64 length = 3;
 }
 
 message ReadReply {
-  repeated FileData data_list = 1;
+  repeated FileBlockInfo data_list = 1;
 }
 
 message WriteRequest {
   string name = 1;
   uint64 offset = 2;
-  bytes data = 3;
+  uint64 length = 3;
 }
 
 message WriteReply {
-  repeated FileData data_list = 1;
+  repeated FileBlockInfo data_list = 1;
 }
+
+message DentryInfo {
+  string name = 1;
+  bool is_dir = 2;
+  uint64 inum = 3;
+  uint64 size = 4;
+}
+
+message ListDirectoryRequest {
+  string path = 1;
+}
+
+message ListDirectoryReply {
+  repeated DentryInfo dentry_list = 1;
+}
+
 // The response message containing the greetings
 message HelloReply {
   string message = 1;

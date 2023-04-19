@@ -13,6 +13,7 @@
 #include "file.hpp"
 #include "spacemanager.hpp"
 #include "spongebob.grpc.pb.h"
+#include "spongebob.pb.h"
 // #include
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -23,8 +24,11 @@ using spongebob::HelloReply;
 using spongebob::HelloRequest;
 using spongebob::ReadRequest;
 using spongebob::ReadReply;
-// using spongebob::WriteRequest;
-// using spongebob::WriteReply;
+using spongebob::WriteRequest;
+using spongebob::WriteReply;
+using spongebob::ListDirectoryRequest;
+using spongebob::ListDirectoryReply;
+
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
@@ -35,8 +39,17 @@ public:
     reply->set_message(prefix + request->name());
     return Status::OK;
   }
+
   Status ReadFile(ServerContext* context, const ReadRequest* request,
                   ReadReply* reply) override {
+    /* Suppose only one directory and its inum is 0. */
+    /* Path parsing have not implemented yet. */
+    auto root_inode = inode_table_->GetInode(0);
+    if (root_inode == nullptr) {
+      std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
+      return Status::CANCELLED;
+    }
+
     for (int i = 0; i < 3; ++i) {
       auto cur_block = reply->add_data_list();
       cur_block->set_serverid(i);
@@ -45,9 +58,23 @@ public:
     }
     return Status::OK;
   }
+
+  Status WriteFile(ServerContext* context, const WriteRequest* request,
+                   WriteReply* reply) override {
+
+    return Status::OK;
+  }
+
+  Status ListDirectory(ServerContext* context, const ListDirectoryRequest* request,
+                  ListDirectoryReply* reply) {
+
+
+  }
+
+
 private:
-  std::unique_ptr<InodeTable> inode_table_;
-  std::unique_ptr<SpaceManager> space_manager_;
+  InodeTable* inode_table_ = nullptr;
+  SpaceManager* space_manager_ = nullptr;
 };
 
 void RunServer(uint16_t port) {
