@@ -29,6 +29,8 @@ using spongebob::WriteReply;
 using spongebob::ListDirectoryRequest;
 using spongebob::ListDirectoryReply;
 
+using namespace spongebob;
+
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
@@ -69,6 +71,12 @@ public:
                   ListDirectoryReply* reply) {
 
 
+  }
+
+  Status RegisterMemoryRegion(ServerContext* context, const RegisterMemoryRegionRequest* request,
+                  RegisterMemoryRegionReply* reply) {
+    std::cout << "RegisterMemoryRegion: " << request->nodeid() << " 0x" << std::hex << request->addr() << std::dec << " Size: " << request->length() << std::endl;
+    return Status::OK;
   }
 
 

@@ -10,6 +10,7 @@ service Greeter {
   rpc WriteFile (WriteRequest) returns (WriteReply) {}
   rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryReply) {}
   // rpc Write (WriteRequest) returns (WriteReply) {}
+  rpc RegisterMemoryRegion (RegisterMemoryRegionRequest) returns (RegisterMemoryRegionReply) {}
 }
 
 // The request message containing the user's name.
@@ -61,4 +62,14 @@ message ListDirectoryReply {
 // The response message containing the greetings
 message HelloReply {
   string message = 1;
+}
+
+message RegisterMemoryRegionRequest {
+  uint64 nodeid = 1;
+  uint64 addr = 2;
+  uint64 length = 3;
+}
+
+message RegisterMemoryRegionReply {
+  bool success = 1;
 }

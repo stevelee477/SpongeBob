@@ -19,6 +19,7 @@ public:
   int ReadFile(const std::string &filename, uint64_t offset, uint64_t length);
   int WriteFile(const std::string &filename, uint64_t offset, uint64_t length);
   int ListDirectory(const std::string &path);
+  int RegisterMemoryRegion(const uint64_t nodeid, const uint64_t addr, const uint64_t length);
 private:
   std::unique_ptr<spongebob::Greeter::Stub> stub_;
 };

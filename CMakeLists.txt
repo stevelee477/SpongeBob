@@ -94,7 +94,7 @@ link_libraries(${CRYPTO_LIBRARIES} ${CMAKE_DL_LIBS})
 set(FS_SRC ${PROJECT_SOURCE_DIR}/src/fs)
 set(NET_SRC ${PROJECT_SOURCE_DIR}/src/net)
 set(TOOLS_SRC ${PROJECT_SOURCE_DIR}/src/tools)
-set(SERVER_SRC ${PROJECT_SOURCE_DIR}/src/server)
+# set(SERVER_SRC ${PROJECT_SOURCE_DIR}/src/server)
 
 
 # Build server
@@ -110,7 +110,7 @@ target_link_libraries(dmfs
   ${_PROTOBUF_LIBPROTOBUF}
 )
 
-# Build server
+# Build meta server
 add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${SERVER_SRC} ${PROJECT_SOURCE_DIR}/src/metadata/MetaServer.cpp)
 target_link_libraries(metaserver
   Threads::Threads
@@ -120,6 +120,19 @@ target_link_libraries(metaserver
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
+
+# Build storage server
+file(GLOB_RECURSE STORAGE_SRC ${PROJECT_SOURCE_DIR}/src/server/spongestorage.cpp ${PROJECT_SOURCE_DIR}/src/storage/*.cpp ${SERVER_SRC})
+add_executable(storageserver ${STORAGE_SRC})
+target_link_libraries(storageserver
+  Threads::Threads
+  sf_grpc_proto
+  absl::flags
+  absl::flags_parse
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF})
+
 
 # greeter_client.cc
 # file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
