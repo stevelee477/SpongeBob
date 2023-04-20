@@ -122,19 +122,20 @@ target_link_libraries(metaserver
   ${_PROTOBUF_LIBPROTOBUF})
 
 # greeter_client.cc
-# file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
-# foreach(GRPC_TESTSRC
-#   ${GRPC_TESTS_SOURCES})
-#   get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
-#   add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC})
-#   target_link_libraries(${GRPC_TESTSRC_NAME}
-#     sf_grpc_proto
-#     absl::flags
-#     absl::flags_parse
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-# endforeach()
+file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
+foreach(GRPC_TESTSRC
+  ${GRPC_TESTS_SOURCES})
+  get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
+  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC} ${PROJECT_SOURCE_DIR}/src/fs/file.cpp ${PROJECT_SOURCE_DIR}/src/fs/spacemanager.cpp)
+  target_link_libraries(${GRPC_TESTSRC_NAME}
+    Threads::Threads
+    sf_grpc_proto
+    absl::flags
+    absl::flags_parse
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endforeach()
 
 # Build client library
 set(CLIENT_BASE ${PROJECT_SOURCE_DIR}/client)

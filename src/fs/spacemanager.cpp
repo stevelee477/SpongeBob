@@ -1,4 +1,5 @@
 #include "spacemanager.hpp"
+#include <cstdint>
 #include <numeric>
 
 SpaceManager::SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t block_size)
@@ -11,11 +12,13 @@ SpaceManager::SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t bl
     //     vec[i] = i;
     // }
     free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin(), vec.end());
+    std::cout << __func__ << " : space start: " << space_start << ", space end: " << space_end << std::endl;
+    std::cout << __func__ << ": " << total_blocks_ << " file blocks in total." << std::endl;
 }
 
 std::vector<uint64_t> SpaceManager::AllocateSpace(uint64_t length) {
     space_lock_.lock();
-    uint64_t to_allocate = (length + block_size_) / block_size_;
+    uint64_t to_allocate = (length + block_size_ - 1) / block_size_;
     if (to_allocate > total_blocks_ - cur_blocks_) {
         std::cerr << "Space isn't enough." << std::endl;
         space_lock_.unlock();
@@ -30,6 +33,16 @@ std::vector<uint64_t> SpaceManager::AllocateSpace(uint64_t length) {
     }
     space_lock_.unlock();
     return res;
+}
+
+uint64_t SpaceManager::AllocateOneBlock() {
+    space_lock_.lock();
+    uint64_t block_nr = free_list_.top();
+    free_list_.pop();
+    inused_blocks_.insert(block_nr);
+    cur_blocks_++;
+    space_lock_.unlock();
+    return block_nr;
 }
 
 bool SpaceManager::ReclaimSpace(std::vector<uint64_t> &block_list) {

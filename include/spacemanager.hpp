@@ -13,8 +13,9 @@ class SpaceManager {
 public:
     SpaceManager() = delete;
     SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t block_size);
-    ~SpaceManager();
+    ~SpaceManager() = default;
     std::vector<uint64_t> AllocateSpace(uint64_t length);
+    uint64_t AllocateOneBlock();
     bool ReclaimSpace(std::vector<uint64_t>& block_list);
     inline uint64_t GetFileBlockSize() { return block_size_; }
 

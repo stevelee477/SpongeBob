@@ -15,7 +15,7 @@ enum class FileType {
     DIR,
 };
 
-struct file_data_info {
+struct file_block_info {
     uint64_t server_id;
     uint64_t start_addr;
     uint64_t length;
@@ -26,7 +26,9 @@ public:
     Dentry() = default;
     Dentry(const std::string& name, uint64_t inum);
     ~Dentry() = default;
-
+    inline uint64_t GetHash() { return hash_; }
+    inline uint64_t GetInodeNum() { return inum_; }
+    inline std::string GetName() { return name_; }
 private:
     std::string name_;
     uint64_t hash_;
@@ -40,17 +42,23 @@ public:
     ~Inode() = default;
 
     uint64_t GetInodeNum() { return inum_;}
+    uint64_t GetSize() { return size_; }
+    uint64_t GetBlockNum() { return block_info_list_.size(); }
+    file_block_info GetBlockInfo(uint64_t block_id) { return block_info_list_[block_id]; }
+    std::shared_ptr<Dentry> GetDentry(const std::string &name);
+    void ChangeFileBlockInfoLength(uint64_t index, uint64_t length);
     bool IsDir() { return type_ == FileType::DIR; }
     void SetInodeNum(uint64_t inum) { inum_ = inum; }
+    void SetSize(uint64_t size) { size_ = size; }
     bool AddDentry(const std::string &name, uint64_t inum);
-    Dentry GetDentry(const std::string &name);
+    void AppendFileBlockInfo(uint64_t server_id, uint64_t start_addr, uint64_t length);
 
 private:
     uint64_t inum_;
     FileType type_;
     uint64_t size_{0};
     std::unordered_map<uint64_t, std::shared_ptr<Dentry>> children_;
-    std::vector<file_data_info> data_info_;
+    std::vector<file_block_info> block_info_list_;
 };
 
 class InodeTable {
@@ -61,8 +69,12 @@ public:
 
     uint64_t AllocateFileInode() { return AllocateFreeInode(FileType::REG_FILE); }
     uint64_t AllocateDirInode() { return AllocateFreeInode(FileType::DIR); }
+    uint64_t GetTotalSize() { return total_size_; }
+    uint64_t GetCurSize() { return cur_size_; }
     std::shared_ptr<Inode> GetInode(uint64_t inum);
     bool DeleteInode(uint64_t inum);
+    void CreateRootDir();
+
 private:
     uint64_t total_size_;
     uint64_t cur_size_;

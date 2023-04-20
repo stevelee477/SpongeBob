@@ -1,6 +1,22 @@
-#include "MetaClient.hpp"
+#include <cstdint>
+#include <grpcpp/client_context.h>
+#include <grpcpp/support/status.h>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <cstdlib>
+#include <iostream>
+#include <ctime>
+
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "spongebob.pb.h"
 
+#include "spongebob.grpc.pb.h"
+#include <grpcpp/grpcpp.h>
+
+ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
+ABSL_FLAG(std::string, user, "world", "The user's name");
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
@@ -15,6 +31,21 @@ using spongebob::ListDirectoryReply;
 using spongebob::ListDirectoryRequest;
 using spongebob::CreateRequest;
 using spongebob::CreateReply;
+
+class GreeterClient {
+public:
+  GreeterClient(std::shared_ptr<grpc::Channel> channel);
+  std::string SayHello(const std::string &user);
+  int ReadFile(const std::string &filename, uint64_t offset, uint64_t length);
+  int WriteFile(const std::string &filename, uint64_t offset, uint64_t length);
+  int CreateFile(const std::string &filename);
+  int CreateDiretory(const std::string &path);
+  int ListDirectory(const std::string &path);
+private:
+  std::unique_ptr<spongebob::Greeter::Stub> stub_;
+};
+
+
 
 GreeterClient::GreeterClient(std::shared_ptr<Channel> channel)
     : stub_(Greeter::NewStub(channel)) {}
@@ -114,7 +145,7 @@ int GreeterClient::CreateFile(const std::string &filename) {
   ClientContext context;
 
   Status status = stub_->CreateFile(&context, create_request, &create_reply);
-
+  std::cout << __func__ << ": " << filename << " created, inum: " << create_reply.inum() << std::endl;
   return 0;
 }
 
@@ -136,5 +167,49 @@ int GreeterClient::ListDirectory(const std::string &path) {
     std::cout << dentry_info.name() << ", " << dentry_info.inum() << ", " << dentry_info.size() << std::endl;
   }
 
+  return 0;
+}
+
+int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  // Instantiate the client. It requires a channel, out of which the actual RPCs
+  // are created. This channel models a connection to an endpoint specified by
+  // the argument "--target=" which is the only expected argument.
+  std::string target_str = absl::GetFlag(FLAGS_target);
+  std::string user = absl::GetFlag(FLAGS_user);
+  // We indicate that the channel isn't authenticated (use of
+  // InsecureChannelCredentials()).
+  GreeterClient greeter(
+      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+  // std::string user("world");
+  // while (std::cin >> user) {
+  //   std::string reply = greeter.SayHello(user);
+  //   std::cout << "Greeter " << user << " received: " << reply << std::endl;
+  // }
+  // auto reply = greeter.Read();
+  // std::string reply = greeter.SayHello(user);
+  // std::cout << "Greeter " << user << " received: " << reply << std::endl;
+  std::srand(std::time(nullptr));
+
+  for (int i = 0; i < 3; ++i) {
+    std::string filename = "test" + std::to_string(i) + ".txt";
+    greeter.CreateFile(filename);
+  }
+
+  // greeter.WriteFile("test.txt", 0, 9543);
+  // greeter.WriteFile("test.txt", 7063, 32622);
+
+  for (int i = 0; i < 3; ++i) {
+    std::string filename = "test" + std::to_string(i) + ".txt";
+    auto l1 = rand() % (1 << 15);
+    auto offset = rand() % l1;
+    auto l2= rand() % (1 << 14);
+    greeter.WriteFile(filename, 0, l1);
+    greeter.ReadFile(filename, 0, l1);
+    greeter.WriteFile(filename, offset, l2);
+    greeter.ReadFile(filename, offset, l2);
+    greeter.ReadFile(filename, 0, offset + l2);
+  }
+  // auto ret = greeter.ReadFile("test.txt", 0, 100);
   return 0;
 }

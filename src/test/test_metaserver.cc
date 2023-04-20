@@ -19,7 +19,7 @@
 #include "spacemanager.hpp"
 #include "spongebob.grpc.pb.h"
 #include "spongebob.pb.h"
-
+// #include
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -193,7 +193,15 @@ public:
       to_write_length = 0;
     }
 
+
+
     file_inode->SetSize(start_offset + write_length - to_write_length - 1);
+    return Status::OK;
+  }
+
+  Status ListDirectory(ServerContext* context, const ListDirectoryRequest* request,
+                  ListDirectoryReply* reply) override {
+
     return Status::OK;
   }
 
@@ -204,7 +212,6 @@ public:
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return Status::CANCELLED;
     }
-
     auto filename = request->name();
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) != nullptr) {
@@ -215,7 +222,7 @@ public:
 
     auto new_inum = inode_table_->AllocateFileInode();
     std::cout << __func__ << " alloc inode " << new_inum << " to file " << filename << std::endl;
-    std::cout << __func__ << " inode table current size: " << inode_table_->GetCurSize() << std::endl;
+    std::cout << __func__ << "inode table current size: " << inode_table_->GetCurSize() << std::endl;
     root_inode->AddDentry(filename, new_inum);
     reply->set_inum(new_inum);
 
@@ -257,4 +264,11 @@ void RunServer(uint16_t port) {
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
   server->Wait();
+}
+
+ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
+int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  RunServer(absl::GetFlag(FLAGS_port));
+  return 0;
 }

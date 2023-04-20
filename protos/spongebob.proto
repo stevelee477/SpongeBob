@@ -9,6 +9,7 @@ service Greeter {
   rpc ReadFile (ReadRequest) returns (ReadReply) {}
   rpc WriteFile (WriteRequest) returns (WriteReply) {}
   rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryReply) {}
+  rpc CreateFile (CreateRequest) returns (CreateReply) {}
   // rpc Write (WriteRequest) returns (WriteReply) {}
 }
 
@@ -30,7 +31,7 @@ message FileBlockInfo {
 }
 
 message ReadReply {
-  repeated FileBlockInfo data_list = 1;
+  repeated FileBlockInfo block_info = 1;
 }
 
 message WriteRequest {
@@ -40,7 +41,7 @@ message WriteRequest {
 }
 
 message WriteReply {
-  repeated FileBlockInfo data_list = 1;
+  repeated FileBlockInfo block_info = 1;
 }
 
 message DentryInfo {
@@ -56,6 +57,15 @@ message ListDirectoryRequest {
 
 message ListDirectoryReply {
   repeated DentryInfo dentry_list = 1;
+}
+
+message CreateRequest {
+  string name = 1;
+  bool is_dir = 2;
+}
+
+message CreateReply {
+  uint64 inum = 1;
 }
 
 // The response message containing the greetings
