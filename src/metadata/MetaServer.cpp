@@ -33,8 +33,8 @@ using spongebob::WriteRequest;
 using spongebob::WriteReply;
 using spongebob::ListDirectoryRequest;
 using spongebob::ListDirectoryReply;
-using spongebob::CreateRequest;
-using spongebob::CreateReply;
+
+using namespace spongebob;
 
 #define FILE_BLOCK_SIZE (1 << 12)
 #define FILE_BLOCK_MASK (FILE_BLOCK_SIZE - 1)
@@ -219,6 +219,12 @@ public:
     root_inode->AddDentry(filename, new_inum);
     reply->set_inum(new_inum);
 
+    return Status::OK;
+  }
+
+  Status RegisterMemoryRegion(ServerContext* context, const RegisterMemoryRegionRequest* request,
+                  RegisterMemoryRegionReply* reply) {
+    std::cout << "RegisterMemoryRegion: " << request->nodeid() << " 0x" << std::hex << request->addr() << std::dec << " Size: " << request->length() << std::endl;
     return Status::OK;
   }
 

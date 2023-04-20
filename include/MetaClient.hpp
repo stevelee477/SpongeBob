@@ -21,6 +21,7 @@ public:
   int CreateFile(const std::string &filename);
   int CreateDiretory(const std::string &path);
   int ListDirectory(const std::string &path);
+  int RegisterMemoryRegion(const uint64_t nodeid, const uint64_t addr, const uint64_t length);
 private:
   std::unique_ptr<spongebob::Greeter::Stub> stub_;
 };

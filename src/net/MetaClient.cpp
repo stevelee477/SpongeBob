@@ -16,6 +16,8 @@ using spongebob::ListDirectoryRequest;
 using spongebob::CreateRequest;
 using spongebob::CreateReply;
 
+using namespace spongebob;
+
 GreeterClient::GreeterClient(std::shared_ptr<Channel> channel)
     : stub_(Greeter::NewStub(channel)) {}
 
@@ -136,5 +138,22 @@ int GreeterClient::ListDirectory(const std::string &path) {
     std::cout << dentry_info.name() << ", " << dentry_info.inum() << ", " << dentry_info.size() << std::endl;
   }
 
+  return 0;
+}
+
+int GreeterClient::RegisterMemoryRegion(uint64_t nodeid, uint64_t addr, uint64_t length) {
+  RegisterMemoryRegionRequest register_memory_region_request;
+  register_memory_region_request.set_nodeid(nodeid);
+  register_memory_region_request.set_addr(addr);
+  register_memory_region_request.set_length(length);
+  RegisterMemoryRegionReply register_memory_region_reply;
+  ClientContext context;
+  Status status = stub_->RegisterMemoryRegion(&context, register_memory_region_request, &register_memory_region_reply);
+
+  if (!status.ok()) {
+    std::cout << status.error_code() << ": " << status.error_message()
+              << std::endl;
+    return -1;
+  }
   return 0;
 }
