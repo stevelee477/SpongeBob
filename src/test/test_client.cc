@@ -20,17 +20,18 @@ ABSL_FLAG(std::string, user, "world", "The user's name");
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using spongebob::Greeter;
-using spongebob::HelloReply;
-using spongebob::HelloRequest;
-using spongebob::ReadReply;
-using spongebob::ReadRequest;
-using spongebob::WriteReply;
-using spongebob::WriteRequest;
-using spongebob::ListDirectoryReply;
-using spongebob::ListDirectoryRequest;
-using spongebob::CreateRequest;
-using spongebob::CreateReply;
+using namespace spongebob;
+// using spongebob::Greeter;
+// using spongebob::HelloReply;
+// using spongebob::HelloRequest;
+// using spongebob::ReadReply;
+// using spongebob::ReadRequest;
+// using spongebob::WriteReply;
+// using spongebob::WriteRequest;
+// using spongebob::ListDirectoryReply;
+// using spongebob::ListDirectoryRequest;
+// using spongebob::CreateRequest;
+// using spongebob::CreateReply;
 
 class GreeterClient {
 public:
@@ -162,9 +163,9 @@ int GreeterClient::ListDirectory(const std::string &path) {
     return -1;
   }
 
-  for (auto dentry_info: list_dir_reply.dentry_list()) {
+  for (auto dentry_info: list_dir_reply.dentry_info()) {
     dentry_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
-    std::cout << dentry_info.name() << ", " << dentry_info.inum() << ", " << dentry_info.size() << std::endl;
+    std::cout << dentry_info.name() << ", inode num: " << dentry_info.inum() << ", size: " << dentry_info.size() << std::endl;
   }
 
   return 0;
@@ -195,9 +196,14 @@ int main(int argc, char** argv) {
     std::string filename = "test" + std::to_string(i) + ".txt";
     greeter.CreateFile(filename);
   }
-
-  // greeter.WriteFile("test.txt", 0, 9543);
-  // greeter.WriteFile("test.txt", 7063, 32622);
+  // auto l1 = 23368;
+  // auto offset = 22295;
+  // auto l2= 2222;
+  // greeter.WriteFile("test.txt", 0, l1);
+  // greeter.ReadFile("test.txt", 0, l1);
+  // greeter.WriteFile("test.txt", offset, l2);
+  // greeter.ReadFile("test.txt", offset, l2);
+  // greeter.ReadFile("test.txt", 0, offset + l2);
 
   for (int i = 0; i < 3; ++i) {
     std::string filename = "test" + std::to_string(i) + ".txt";
@@ -210,6 +216,7 @@ int main(int argc, char** argv) {
     greeter.ReadFile(filename, offset, l2);
     greeter.ReadFile(filename, 0, offset + l2);
   }
+  greeter.ListDirectory("/");
   // auto ret = greeter.ReadFile("test.txt", 0, 100);
   return 0;
 }

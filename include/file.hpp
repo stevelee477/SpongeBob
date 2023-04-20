@@ -10,6 +10,12 @@
 #include <mutex>
 #include <algorithm>
 #include <iostream>
+
+
+#define FILE_BLOCK_SIZE (1 << 12)
+#define FILE_BLOCK_MASK (FILE_BLOCK_SIZE - 1)
+
+
 enum class FileType {
     REG_FILE,
     DIR,
@@ -26,9 +32,11 @@ public:
     Dentry() = default;
     Dentry(const std::string& name, uint64_t inum);
     ~Dentry() = default;
+
     inline uint64_t GetHash() { return hash_; }
     inline uint64_t GetInodeNum() { return inum_; }
     inline std::string GetName() { return name_; }
+    bool IsDir() { return inum_ == 0; }
 private:
     std::string name_;
     uint64_t hash_;
@@ -45,7 +53,10 @@ public:
     uint64_t GetSize() { return size_; }
     uint64_t GetBlockNum() { return block_info_list_.size(); }
     file_block_info GetBlockInfo(uint64_t block_id) { return block_info_list_[block_id]; }
+    const std::unordered_map<uint64_t, std::shared_ptr<Dentry>> GetDentryMap() const { return children_; }
     std::shared_ptr<Dentry> GetDentry(const std::string &name);
+
+
     void ChangeFileBlockInfoLength(uint64_t index, uint64_t length);
     bool IsDir() { return type_ == FileType::DIR; }
     void SetInodeNum(uint64_t inum) { inum_ = inum; }

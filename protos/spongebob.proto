@@ -10,7 +10,6 @@ service Greeter {
   rpc WriteFile (WriteRequest) returns (WriteReply) {}
   rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryReply) {}
   rpc CreateFile (CreateRequest) returns (CreateReply) {}
-  // rpc Write (WriteRequest) returns (WriteReply) {}
   rpc RegisterMemoryRegion (RegisterMemoryRegionRequest) returns (RegisterMemoryRegionReply) {}
 }
 
@@ -57,7 +56,7 @@ message ListDirectoryRequest {
 }
 
 message ListDirectoryReply {
-  repeated DentryInfo dentry_list = 1;
+  repeated DentryInfo dentry_info = 1;
 }
 
 message CreateRequest {

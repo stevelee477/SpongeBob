@@ -1,4 +1,5 @@
 #include "file.hpp"
+#include "spacemanager.hpp"
 #include <string>
 using namespace std;
 int main() {
@@ -29,7 +30,7 @@ int main() {
         }
     }
 
-
+    SpaceManager space_manager(123, FILE_BLOCK_SIZE << 8, FILE_BLOCK_SIZE);
 
 
 

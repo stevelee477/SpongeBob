@@ -4,17 +4,18 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using spongebob::Greeter;
-using spongebob::HelloReply;
-using spongebob::HelloRequest;
-using spongebob::ReadReply;
-using spongebob::ReadRequest;
-using spongebob::WriteReply;
-using spongebob::WriteRequest;
-using spongebob::ListDirectoryReply;
-using spongebob::ListDirectoryRequest;
-using spongebob::CreateRequest;
-using spongebob::CreateReply;
+using namespace::spongebob;
+// using spongebob::Greeter;
+// using spongebob::HelloReply;
+// using spongebob::HelloRequest;
+// using spongebob::ReadReply;
+// using spongebob::ReadRequest;
+// using spongebob::WriteReply;
+// using spongebob::WriteRequest;
+// using spongebob::ListDirectoryReply;
+// using spongebob::ListDirectoryRequest;
+// using spongebob::CreateRequest;
+// using spongebob::CreateReply;
 
 using namespace spongebob;
 
@@ -133,7 +134,7 @@ int GreeterClient::ListDirectory(const std::string &path) {
     return -1;
   }
 
-  for (auto dentry_info: list_dir_reply.dentry_list()) {
+  for (auto dentry_info: list_dir_reply.dentry_info()) {
     dentry_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
     std::cout << dentry_info.name() << ", " << dentry_info.inum() << ", " << dentry_info.size() << std::endl;
   }

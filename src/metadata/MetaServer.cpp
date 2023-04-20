@@ -24,27 +24,27 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using spongebob::Greeter;
-using spongebob::HelloReply;
-using spongebob::HelloRequest;
-using spongebob::ReadRequest;
-using spongebob::ReadReply;
-using spongebob::WriteRequest;
-using spongebob::WriteReply;
-using spongebob::ListDirectoryRequest;
-using spongebob::ListDirectoryReply;
-
 using namespace spongebob;
+// using spongebob::Greeter;
+// using spongebob::HelloReply;
+// using spongebob::HelloRequest;
+// using spongebob::ReadRequest;
+// using spongebob::ReadReply;
+// using spongebob::WriteRequest;
+// using spongebob::WriteReply;
+// using spongebob::ListDirectoryRequest;
+// using spongebob::ListDirectoryReply;
+// using spongebob::RegisterMemoryRegionRequest;
+// using spongebob::RegisterMemoryRegionReply;
+// using namespace spongebob;
 
-#define FILE_BLOCK_SIZE (1 << 12)
-#define FILE_BLOCK_MASK (FILE_BLOCK_SIZE - 1)
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
 public:
   GreeterServiceImpl() {
     inode_table_ = std::make_shared<InodeTable>(100);
-    space_manager_ = std::make_shared<SpaceManager>(0, 1 << 20, FILE_BLOCK_SIZE);
+    space_manager_ = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE);
   }
 
   Status SayHello(ServerContext* context, const HelloRequest* request,
@@ -69,9 +69,10 @@ public:
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return Status::CANCELLED;
     }
-    auto file_name = request->name();
-    auto start_offset = request->offset();
-    auto read_length = request->length();
+    std::string file_name = request->name();
+    uint64_t start_offset = request->offset();
+    uint64_t read_length = request->length();
+    uint64_t to_read_length = read_length;
     auto file_dentry = root_inode->GetDentry(file_name);
 
     if (file_dentry == nullptr) {
@@ -79,7 +80,7 @@ public:
       return Status::CANCELLED;
     }
 
-    auto file_inum = file_dentry->GetInodeNum();
+    uint64_t file_inum = file_dentry->GetInodeNum();
     auto file_inode = inode_table_->GetInode(file_inum);
     assert(file_inode != nullptr);
 
@@ -95,34 +96,26 @@ public:
       auto cur_block_info = file_inode->GetBlockInfo(start_block);
       auto first_block_info = reply->add_block_info();
       auto inner_offset = start_offset & FILE_BLOCK_MASK;
-      auto bytes_read = FILE_BLOCK_SIZE - inner_offset;
+      auto bytes_read = std::min(FILE_BLOCK_SIZE - inner_offset, to_read_length);
       InitBlockInfo(first_block_info, cur_block_info.server_id, cur_block_info.start_addr + inner_offset, bytes_read);
-      read_length -= bytes_read;
+      to_read_length -= bytes_read;
       start_block++;
     }
 
-    while (read_length >= FILE_BLOCK_SIZE) {
+    while (to_read_length >= FILE_BLOCK_SIZE) {
       auto cur_block_info = file_inode->GetBlockInfo(start_block);
       auto block_info = reply->add_block_info();
       InitBlockInfo(block_info, cur_block_info.server_id, cur_block_info.start_addr, FILE_BLOCK_SIZE);
-      read_length -= FILE_BLOCK_SIZE;
+      to_read_length -= FILE_BLOCK_SIZE;
       start_block++;
     }
 
-    if (read_length) {
+    if (to_read_length) {
       auto cur_block_info = file_inode->GetBlockInfo(start_block);
       auto last_block_info = reply->add_block_info();
-      InitBlockInfo(last_block_info, cur_block_info.server_id, cur_block_info.start_addr, read_length);
-      read_length = 0;
+      InitBlockInfo(last_block_info, cur_block_info.server_id, cur_block_info.start_addr, to_read_length);
+      to_read_length = 0;
     }
-
-
-    // for (int i = 0; i < 3; ++i) {
-    //   auto cur_block = reply->add_block_info();
-    //   cur_block->set_serverid(i);
-    //   cur_block->set_offset(i * 2);
-    //   cur_block->set_length(i * 3);
-    // }
     return Status::OK;
   }
 
@@ -133,7 +126,7 @@ public:
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return Status::CANCELLED;
     }
-    auto file_name = request->name();
+    std::string file_name = request->name();
 
     auto file_dentry = root_inode->GetDentry(file_name);
 
@@ -143,11 +136,11 @@ public:
       file_dentry = root_inode->GetDentry(file_name);
     }
 
-    auto file_inum = file_dentry->GetInodeNum();
+    uint64_t file_inum = file_dentry->GetInodeNum();
     auto file_inode = inode_table_->GetInode(file_inum);
-    auto start_offset = request->offset();
-    auto write_length = request->length();
-    auto to_write_length = write_length;
+    uint64_t start_offset = request->offset();
+    uint64_t write_length = request->length();
+    uint64_t to_write_length = write_length;
     uint64_t total_blocks = (start_offset + write_length + FILE_BLOCK_SIZE - 1) / FILE_BLOCK_SIZE;
     uint64_t start_block = start_offset / FILE_BLOCK_SIZE;
 
@@ -167,7 +160,7 @@ public:
       auto cur_length = cur_block_info.length;
       auto first_block_info = reply->add_block_info();
       auto inner_offset = start_offset & FILE_BLOCK_MASK;
-      auto bytes_write = FILE_BLOCK_SIZE - inner_offset;
+      auto bytes_write = std::min(FILE_BLOCK_SIZE - inner_offset, to_write_length);
 
       InitBlockInfo(first_block_info, cur_block_info.server_id, cur_block_info.start_addr + inner_offset, bytes_write);
 
@@ -193,10 +186,11 @@ public:
       to_write_length = 0;
     }
 
+
+
     file_inode->SetSize(start_offset + write_length - to_write_length - 1);
     return Status::OK;
   }
-
   Status CreateFile(ServerContext* context, const CreateRequest* request,
                   CreateReply* reply) override{
     auto root_inode = inode_table_->GetInode(0);
@@ -223,10 +217,32 @@ public:
   }
 
   Status RegisterMemoryRegion(ServerContext* context, const RegisterMemoryRegionRequest* request,
-                  RegisterMemoryRegionReply* reply) {
+                  RegisterMemoryRegionReply* reply) override {
     std::cout << "RegisterMemoryRegion: " << request->nodeid() << " 0x" << std::hex << request->addr() << std::dec << " Size: " << request->length() << std::endl;
     return Status::OK;
   }
+
+  Status ListDirectory(ServerContext* context, const ListDirectoryRequest* request,
+                  ListDirectoryReply* reply) override {
+    /* The file system only has root directory now. */
+    std::string path = request->path();
+    auto root_inode = inode_table_->GetInode(0);
+    if (root_inode == nullptr) {
+      std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
+      return Status::CANCELLED;
+    }
+    auto dentry_map = root_inode->GetDentryMap();
+    for (auto it = dentry_map.begin(); it != dentry_map.end(); ++it) {
+      auto dentry_info = reply->add_dentry_info();
+      auto file_inode = inode_table_->GetInode(it->second->GetInodeNum());
+      // std::cout << it->second->GetName() << " " << it->second->GetInodeNum() << std::endl;
+      dentry_info->set_name(it->second->GetName());
+      dentry_info->set_inum(it->second->GetInodeNum());
+      dentry_info->set_is_dir(file_inode->IsDir());
+      dentry_info->set_size(file_inode->GetSize());
+    }
+    return Status::OK;
+}
 
 private:
   uint64_t CreateFile_(const std::string &name, bool is_dir) {
