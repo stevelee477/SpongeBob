@@ -99,19 +99,9 @@ set(TOOLS_SRC ${PROJECT_SOURCE_DIR}/src/tools)
 
 # Build server
 file(GLOB_RECURSE SERVER_SRC ${FS_SRC}/*.cpp ${FS_SRC}/*.c ${NET_SRC}/*.cpp ${TOOLS_SRC}/*.cpp )
-add_executable(dmfs ${PROJECT_SOURCE_DIR}/src/server/dmfs.cpp ${SERVER_SRC})
-target_link_libraries(dmfs
-  Threads::Threads
-  sf_grpc_proto
-  absl::flags
-  absl::flags_parse
-  ${_REFLECTION}
-  ${_GRPC_GRPCPP}
-  ${_PROTOBUF_LIBPROTOBUF}
-)
 
 # Build meta server
-add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/metaserver.cpp ${SERVER_SRC} ${PROJECT_SOURCE_DIR}/src/metadata/MetaServer.cpp)
+add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/spongemeta.cpp ${SERVER_SRC} ${PROJECT_SOURCE_DIR}/src/metadata/MetaServer.cpp)
 target_link_libraries(metaserver
   Threads::Threads
   sf_grpc_proto
