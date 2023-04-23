@@ -27,7 +27,7 @@
 
 #include "Configuration.hpp"
 #include "debug.hpp"
-#include "global.h"
+#include "queue.h"
 
 
 /*

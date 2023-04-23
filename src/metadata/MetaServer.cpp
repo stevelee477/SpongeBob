@@ -14,7 +14,6 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
-#include "common.hpp"
 #include "file.hpp"
 #include "spacemanager.hpp"
 #include "spongebob.grpc.pb.h"

@@ -14,7 +14,7 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
-#include "common.hpp"
+// #include "common.hpp"
 #include "file.hpp"
 #include "spacemanager.hpp"
 #include "spongebob.grpc.pb.h"
@@ -284,9 +284,8 @@ void RunServer(uint16_t port) {
   server->Wait();
 }
 
-ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
+int port = 50051;
 int main(int argc, char** argv) {
-  absl::ParseCommandLine(argc, argv);
-  RunServer(absl::GetFlag(FLAGS_port));
+  RunServer(port);
   return 0;
 }
