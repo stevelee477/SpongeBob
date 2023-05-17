@@ -25,9 +25,11 @@ message ReadRequest {
 }
 
 message FileBlockInfo {
-  uint64  serverid = 1;
-  uint64 offset = 2;
-  uint64 length = 3;
+  uint64 block_idx = 1;
+  uint64 serverid = 2;
+  uint64 mem_offset = 3;
+  uint64 length = 4;
+  uint64 buff_offset = 5;
 }
 
 message ReadReply {

@@ -71,9 +71,11 @@ int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
   // auto data_list = read_reply.block_info();
   for (auto cur_block : read_reply.block_info()) {
     // std::cout << cur_block.get_serverid();
+    std::cout << cur_block.block_idx() << ", ";
     std::cout << cur_block.serverid() << ", ";
-    std::cout << cur_block.offset() << ", ";
-    std::cout << cur_block.length() << std::endl;
+    std::cout << cur_block.mem_offset() << ", ";
+    std::cout << cur_block.length() << ", ";
+    std::cout << cur_block.buff_offset() << std::endl;
   }
   std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
 
@@ -101,9 +103,11 @@ int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint6
 
   for (auto cur_block : write_reply.block_info()) {
     // std::cout << cur_block.get_serverid();
+    std::cout << cur_block.block_idx() << ", ";
     std::cout << cur_block.serverid() << ", ";
-    std::cout << cur_block.offset() << ", ";
-    std::cout << cur_block.length() << std::endl;
+    std::cout << cur_block.mem_offset() << ", ";
+    std::cout << cur_block.length() << ", ";
+    std::cout << cur_block.buff_offset() << std::endl;
   }
   std::cout << __func__ << ": " << "write file finished." << std::endl << std::endl;
   return 0;

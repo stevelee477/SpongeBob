@@ -42,6 +42,7 @@ public:
   int CreateFile(const std::string &filename);
   int CreateDiretory(const std::string &path);
   int ListDirectory(const std::string &path);
+  int RegisterMemoryRegion(uint64_t nodeid, uint64_t addr, uint64_t length);
 private:
   std::unique_ptr<spongebob::Greeter::Stub> stub_;
 };
@@ -100,9 +101,11 @@ int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
   // auto data_list = read_reply.block_info();
   for (auto cur_block : read_reply.block_info()) {
     // std::cout << cur_block.get_serverid();
+    std::cout << cur_block.block_idx() << ", ";
     std::cout << cur_block.serverid() << ", ";
-    std::cout << cur_block.offset() << ", ";
-    std::cout << cur_block.length() << std::endl;
+    std::cout << cur_block.mem_offset() << ", ";
+    std::cout << cur_block.length() << ", ";
+    std::cout << cur_block.buff_offset() << std::endl;
   }
   std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
 
@@ -130,9 +133,11 @@ int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint6
 
   for (auto cur_block : write_reply.block_info()) {
     // std::cout << cur_block.get_serverid();
+    std::cout << cur_block.block_idx() << ", ";
     std::cout << cur_block.serverid() << ", ";
-    std::cout << cur_block.offset() << ", ";
-    std::cout << cur_block.length() << std::endl;
+    std::cout << cur_block.mem_offset() << ", ";
+    std::cout << cur_block.length() << ", ";
+    std::cout << cur_block.buff_offset() << std::endl;
   }
   std::cout << __func__ << ": " << "write file finished." << std::endl << std::endl;
   return 0;
@@ -146,7 +151,7 @@ int GreeterClient::CreateFile(const std::string &filename) {
   ClientContext context;
 
   Status status = stub_->CreateFile(&context, create_request, &create_reply);
-  std::cout << __func__ << ": " << filename << " created, inum: " << create_reply.inum() << std::endl;
+
   return 0;
 }
 
@@ -165,9 +170,26 @@ int GreeterClient::ListDirectory(const std::string &path) {
 
   for (auto dentry_info: list_dir_reply.dentry_info()) {
     dentry_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
-    std::cout << dentry_info.name() << ", inode num: " << dentry_info.inum() << ", size: " << dentry_info.size() << std::endl;
+    std::cout << dentry_info.name() << ", " << dentry_info.inum() << ", " << dentry_info.size() << std::endl;
   }
 
+  return 0;
+}
+
+int GreeterClient::RegisterMemoryRegion(uint64_t nodeid, uint64_t addr, uint64_t length) {
+  RegisterMemoryRegionRequest register_memory_region_request;
+  register_memory_region_request.set_nodeid(nodeid);
+  register_memory_region_request.set_addr(addr);
+  register_memory_region_request.set_length(length);
+  RegisterMemoryRegionReply register_memory_region_reply;
+  ClientContext context;
+  Status status = stub_->RegisterMemoryRegion(&context, register_memory_region_request, &register_memory_region_reply);
+
+  if (!status.ok()) {
+    std::cout << status.error_code() << ": " << status.error_message()
+              << std::endl;
+    return -1;
+  }
   return 0;
 }
 

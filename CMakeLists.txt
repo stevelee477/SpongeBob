@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 project(SpongeBob C CXX)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Threads REQUIRED)
@@ -66,7 +67,8 @@ target_link_libraries(sf_grpc_proto
   ${_PROTOBUF_LIBPROTOBUF})
 
 link_libraries("ibverbs")
-link_libraries("fuse")
+# link_libraries("fuse")
+link_libraries("fuse3")
 # Compiler options
 set (CMAKE_C_FLAGS "-Wall -Wno-deprecated-declarations -Wsign-compare")
 set (CMAKE_CXX_FLAGS "-g ${CMAKE_C_FLAGS} -O0 -DTHREAD -D_FILE_OFFSET_BITS=64")
@@ -78,7 +80,7 @@ endif()
 # Find 3rd party libs
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-
+# find_package(FUSE3 REQUIRED)
 # Incs and Libs
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -115,9 +117,9 @@ target_link_libraries(storageserver
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
-
+  include_directories("/usr/include/fuse3")
 # greeter_client.cc
-file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
+file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/testfuse/*.cpp)
 foreach(GRPC_TESTSRC
   ${GRPC_TESTS_SOURCES})
   get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
@@ -133,12 +135,12 @@ foreach(GRPC_TESTSRC
 endforeach()
 
 # Build test
-file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
-message("${TEST_SOURCES}")
-foreach (TSTSRC ${TEST_SOURCES})
-    get_filename_component(TSTNAME ${TSTSRC} NAME_WE)
-    add_executable(${TSTNAME} ${TSTSRC})
-endforeach()
+# file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
+# message("${TEST_SOURCES}")
+# foreach (TSTSRC ${TEST_SOURCES})
+#     get_filename_component(TSTNAME ${TSTSRC} NAME_WE)
+#     add_executable(${TSTNAME} ${TSTSRC})
+# endforeach()
 
 
 # add_subdirectory(src/testfuse)

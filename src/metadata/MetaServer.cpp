@@ -53,10 +53,13 @@ public:
     return Status::OK;
   }
 
-  void InitBlockInfo(spongebob::FileBlockInfo* block_info, uint64_t server_id, uint64_t offset, uint64_t length) {
+  void InitBlockInfo(spongebob::FileBlockInfo* block_info,
+    uint64_t block_idx, uint64_t server_id, uint64_t mem_offset, uint64_t length, uint64_t buff_offset) {
+    block_info->set_block_idx(block_idx);
     block_info->set_serverid(server_id);
-    block_info->set_offset(offset);
+    block_info->set_mem_offset(mem_offset);
     block_info->set_length(length);
+    block_info->set_buff_offset(buff_offset);
   }
 
   Status ReadFile(ServerContext* context, const ReadRequest* request,
@@ -72,6 +75,7 @@ public:
     uint64_t start_offset = request->offset();
     uint64_t read_length = request->length();
     uint64_t to_read_length = read_length;
+    uint64_t buff_offset = 0;
     auto file_dentry = root_inode->GetDentry(file_name);
 
     if (file_dentry == nullptr) {
@@ -96,7 +100,8 @@ public:
       auto first_block_info = reply->add_block_info();
       auto inner_offset = start_offset & FILE_BLOCK_MASK;
       auto bytes_read = std::min(FILE_BLOCK_SIZE - inner_offset, to_read_length);
-      InitBlockInfo(first_block_info, cur_block_info.server_id, cur_block_info.start_addr + inner_offset, bytes_read);
+      InitBlockInfo(first_block_info, start_block, cur_block_info.server_id, cur_block_info.start_addr + inner_offset, bytes_read, buff_offset);
+      buff_offset += bytes_read;
       to_read_length -= bytes_read;
       start_block++;
     }
@@ -104,7 +109,8 @@ public:
     while (to_read_length >= FILE_BLOCK_SIZE) {
       auto cur_block_info = file_inode->GetBlockInfo(start_block);
       auto block_info = reply->add_block_info();
-      InitBlockInfo(block_info, cur_block_info.server_id, cur_block_info.start_addr, FILE_BLOCK_SIZE);
+      InitBlockInfo(block_info, start_block, cur_block_info.server_id, cur_block_info.start_addr, FILE_BLOCK_SIZE, buff_offset);
+      buff_offset += FILE_BLOCK_SIZE;
       to_read_length -= FILE_BLOCK_SIZE;
       start_block++;
     }
@@ -112,7 +118,8 @@ public:
     if (to_read_length) {
       auto cur_block_info = file_inode->GetBlockInfo(start_block);
       auto last_block_info = reply->add_block_info();
-      InitBlockInfo(last_block_info, cur_block_info.server_id, cur_block_info.start_addr, to_read_length);
+      InitBlockInfo(last_block_info, start_block, cur_block_info.server_id, cur_block_info.start_addr, to_read_length, buff_offset);
+      buff_offset += FILE_BLOCK_SIZE;
       to_read_length = 0;
     }
     return Status::OK;
@@ -140,6 +147,7 @@ public:
     uint64_t start_offset = request->offset();
     uint64_t write_length = request->length();
     uint64_t to_write_length = write_length;
+    uint64_t buff_offset = 0;
     uint64_t total_blocks = (start_offset + write_length + FILE_BLOCK_SIZE - 1) / FILE_BLOCK_SIZE;
     uint64_t start_block = start_offset / FILE_BLOCK_SIZE;
 
@@ -161,8 +169,8 @@ public:
       auto inner_offset = start_offset & FILE_BLOCK_MASK;
       auto bytes_write = std::min(FILE_BLOCK_SIZE - inner_offset, to_write_length);
 
-      InitBlockInfo(first_block_info, cur_block_info.server_id, cur_block_info.start_addr + inner_offset, bytes_write);
-
+      InitBlockInfo(first_block_info, start_block, cur_block_info.server_id, cur_block_info.start_addr + inner_offset, bytes_write, buff_offset);
+      buff_offset += bytes_write;
       to_write_length -= bytes_write;
       file_inode->ChangeFileBlockInfoLength(start_block, cur_length + bytes_write);
       start_block++;
@@ -171,7 +179,8 @@ public:
     while (to_write_length >= FILE_BLOCK_SIZE) {
       auto cur_block_info = file_inode->GetBlockInfo(start_block);
       auto block_info = reply->add_block_info();
-      InitBlockInfo(block_info, cur_block_info.server_id, cur_block_info.start_addr, FILE_BLOCK_SIZE);
+      InitBlockInfo(block_info, start_block, cur_block_info.server_id, cur_block_info.start_addr, FILE_BLOCK_SIZE, buff_offset);
+      buff_offset += FILE_BLOCK_SIZE;
       to_write_length -= FILE_BLOCK_SIZE;
       file_inode->ChangeFileBlockInfoLength(start_block, FILE_BLOCK_SIZE);
       start_block++;
@@ -180,16 +189,15 @@ public:
     if (to_write_length) {
       auto cur_block_info = file_inode->GetBlockInfo(start_block);
       auto last_block_info = reply->add_block_info();
-      InitBlockInfo(last_block_info, cur_block_info.server_id, cur_block_info.start_addr, to_write_length);
+      InitBlockInfo(last_block_info, start_block, cur_block_info.server_id, cur_block_info.start_addr, to_write_length, buff_offset);
       file_inode->ChangeFileBlockInfoLength(start_block, to_write_length);
       to_write_length = 0;
     }
 
-
-
     file_inode->SetSize(start_offset + write_length - to_write_length - 1);
     return Status::OK;
   }
+
   Status CreateFile(ServerContext* context, const CreateRequest* request,
                   CreateReply* reply) override{
     auto root_inode = inode_table_->GetInode(0);

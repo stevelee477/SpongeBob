@@ -13,7 +13,6 @@ Dentry::Dentry(const std::string& name, uint64_t inum): name_(name), inum_(inum)
     hash_ = std::hash<std::string>{}(name); // todo: find a string hash function.
 }
 
-
 /* Inode */
 Inode::Inode(FileType type, uint64_t inum): inum_(inum), type_(type) {}
 bool Inode::AddDentry(const std::string &name, uint64_t inum) {
