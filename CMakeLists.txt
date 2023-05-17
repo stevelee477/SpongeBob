@@ -104,7 +104,7 @@ target_link_libraries(metaserver
   ${_PROTOBUF_LIBPROTOBUF})
 
 # Build storage server
-file(GLOB_RECURSE STORAGE_SRC ${PROJECT_SOURCE_DIR}/src/server/spongestorage.cpp ${PROJECT_SOURCE_DIR}/src/storage/*.cpp ${SERVER_SRC})
+file(GLOB_RECURSE STORAGE_SRC ${PROJECT_SOURCE_DIR}/src/server/spongestorage.cpp ${PROJECT_SOURCE_DIR}/src/storage/*.cpp ${SERVER_SRC} ${PROJECT_SOURCE_DIR}/src/metadata/MetaClient.cpp)
 add_executable(storageserver ${STORAGE_SRC})
 target_link_libraries(storageserver
   Threads::Threads

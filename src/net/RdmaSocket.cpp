@@ -964,6 +964,7 @@ bool RdmaSocket::RdmaWrite(uint16_t NodeID, uint64_t SourceBuffer, uint64_t DesB
     }
     wr.send_flags = IBV_SEND_SIGNALED;
     wr.wr.rdma.remote_addr = DesBuffer + peer->RegisteredMemory;
+    std::cout << "Fuckkkkkkkk " << std::hex << peer->RegisteredMemory << std::endl;
     Debug::debugItem("Post RDMA_WRITE with remote address = %lx", wr.wr.rdma.remote_addr);
     wr.wr.rdma.rkey        = peer->rkey;
     if (ibv_post_send(peer->qp[TaskID], &wr, &wrBad)) {
