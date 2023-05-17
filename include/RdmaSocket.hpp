@@ -23,6 +23,7 @@
 #include <thread>
 #include <stdint.h>
 #include <assert.h>
+#include <ifaddrs.h>
 #include <cstdint>
 
 #include "Configuration.hpp"

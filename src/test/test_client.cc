@@ -15,35 +15,38 @@
 #include "spongebob.grpc.pb.h"
 #include <grpcpp/grpcpp.h>
 
+#include "RdmaSocket.hpp"
+#include "Configuration.hpp"
+
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
 ABSL_FLAG(std::string, user, "world", "The user's name");
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+
 using namespace spongebob;
-// using spongebob::Greeter;
-// using spongebob::HelloReply;
-// using spongebob::HelloRequest;
-// using spongebob::ReadReply;
-// using spongebob::ReadRequest;
-// using spongebob::WriteReply;
-// using spongebob::WriteRequest;
-// using spongebob::ListDirectoryReply;
-// using spongebob::ListDirectoryRequest;
-// using spongebob::CreateRequest;
-// using spongebob::CreateReply;
+
+struct BlockInfo {
+  // BlockInfo() = default;
+  // BlockInfo(uint64_t serverid, uint64_t offset, uint64_t length) : serverid(serverid), offset(offset), length(length) {}
+  uint64_t serverid;
+  uint64_t offset;
+  uint64_t length;
+};
 
 class GreeterClient {
 public:
   GreeterClient(std::shared_ptr<grpc::Channel> channel);
   std::string SayHello(const std::string &user);
-  int ReadFile(const std::string &filename, uint64_t offset, uint64_t length);
-  int WriteFile(const std::string &filename, uint64_t offset, uint64_t length);
+  std::vector<BlockInfo> ReadFile(const std::string &filename, uint64_t offset, uint64_t length);
+  std::vector<BlockInfo> WriteFile(const std::string &filename, uint64_t offset, uint64_t length);
   int CreateFile(const std::string &filename);
   int CreateDiretory(const std::string &path);
   int ListDirectory(const std::string &path);
 private:
   std::unique_ptr<spongebob::Greeter::Stub> stub_;
+  std::unique_ptr<RdmaSocket> rdmaSocket;
+  std::unique_ptr<char[]> buffer;
 };
 
 
@@ -54,21 +57,13 @@ GreeterClient::GreeterClient(std::shared_ptr<Channel> channel)
 // Assembles the client's payload, sends it and presents the response back
 // from the server.
 std::string GreeterClient::SayHello(const std::string &user) {
-  // Data we are sending to the server.
   HelloRequest request;
   request.set_name(user);
-
-  // Container for the data we expect from the server.
   HelloReply reply;
-
-  // Context for the client. It could be used to convey extra information to
-  // the server and/or tweak certain RPC behaviors.
   ClientContext context;
 
-  // The actual RPC.
   Status status = stub_->SayHello(&context, request, &reply);
 
-  // Act upon its status.
   if (status.ok()) {
     return reply.message();
   } else {
@@ -78,7 +73,7 @@ std::string GreeterClient::SayHello(const std::string &user) {
   }
 }
 
-int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
+std::vector<BlockInfo> GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
                             uint64_t length) {
   ReadRequest read_request;
   // int res = 0;
@@ -87,29 +82,31 @@ int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
   read_request.set_length(length);
   ReadReply read_reply;
   ClientContext context;
+
   Status status = stub_->ReadFile(&context, read_request, &read_reply);
 
   if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
-    return -1;
+    return std::vector<BlockInfo>();
   }
 
   uint64_t size = read_reply.block_info_size();
   std::cout << __func__ << ": " << size << " file data blocks received." << std::endl;
-  // auto data_list = read_reply.block_info();
+
+  size_t local_offset = 0;
+  std::vector<BlockInfo> block_info_list;
   for (auto cur_block : read_reply.block_info()) {
-    // std::cout << cur_block.get_serverid();
     std::cout << cur_block.serverid() << ", ";
     std::cout << cur_block.offset() << ", ";
     std::cout << cur_block.length() << std::endl;
+    block_info_list.emplace_back(BlockInfo{cur_block.serverid(), cur_block.offset(), cur_block.length()});
   }
   std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
-
-  return 0;
+  return block_info_list;
 }
 
-int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length) {
+std::vector<BlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length) {
   WriteRequest write_request;
   write_request.set_name(filename);
   write_request.set_offset(offset);
@@ -121,21 +118,23 @@ int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint6
   if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
-    return -1;
+    return std::vector<BlockInfo>();
   }
 
   uint64_t size = write_reply.block_info_size();
   std::cout << __func__ << ": " << size << " file data blocks info received." << std::endl;
-  auto data_list = write_reply.block_info();
 
+  std::vector<BlockInfo> block_info_list;
   for (auto cur_block : write_reply.block_info()) {
     // std::cout << cur_block.get_serverid();
     std::cout << cur_block.serverid() << ", ";
     std::cout << cur_block.offset() << ", ";
     std::cout << cur_block.length() << std::endl;
+    block_info_list.emplace_back(BlockInfo{cur_block.serverid(), cur_block.offset(), cur_block.length()});
+    // auto ret = rdmaSocket->RdmaWrite(1, peer->RegisteredMemory, reinterpret_cast<uint64_t>(buffer),100, 0, 0);
   }
   std::cout << __func__ << ": " << "write file finished." << std::endl << std::endl;
-  return 0;
+  return block_info_list;
 }
 
 int GreeterClient::CreateFile(const std::string &filename) {
@@ -171,17 +170,125 @@ int GreeterClient::ListDirectory(const std::string &path) {
   return 0;
 }
 
+class Client {
+public:
+  Client();
+  int read(std::string& filename, char* buffer, uint64_t offset, uint64_t length);
+  int write(std::string& filename, char* buffer, uint64_t offset, uint64_t length);
+  int create(std::string& filename);
+  int list(std::string& path);
+private:
+  std::unique_ptr<GreeterClient> metaClient;
+  std::unique_ptr<RdmaSocket> rdmaSocket;
+  std::unique_ptr<char[]> buffer;
+  int readTaskID = 0;
+  int writeTaskID = 0;
+};
+
+Client::Client() {
+    Configuration *config = new Configuration();
+    buffer = std::make_unique<char[]>(1<<10);
+    rdmaSocket = std::make_unique<RdmaSocket>(2, reinterpret_cast<uint64_t>(buffer.get()), 0, config, false, 0);
+    rdmaSocket->RdmaConnect();
+    metaClient = std::make_unique<GreeterClient>(grpc::CreateChannel(config->metaip, grpc::InsecureChannelCredentials()));
+}
+
+int Client::read(std::string& filename, char* user_buf, uint64_t offset, uint64_t length) {
+  size_t local_offset = 0;
+
+  auto block_info_list = metaClient->ReadFile(filename, offset, length);
+  for (auto& block : block_info_list) {
+    // auto ret = rdmaSocket->RdmaRead(block.serverid, reinterpret_cast<uint64_t>(buffer.get()) + local_offset, block.offset, block.length, readTaskID++);
+    auto ret = rdmaSocket->RdmaRead(1, reinterpret_cast<uint64_t>(buffer.get()) + local_offset, block.offset, block.length, readTaskID++);
+    if (!ret) {
+      cerr << "read error" << endl;
+      return -1;
+    }
+    local_offset += block.length;
+    cout << __func__ << "\n";
+  }
+  assert(local_offset == length);
+  memcpy(user_buf, buffer.get(), length);
+  return 0;
+}
+
+int Client::write(std::string& filename, char* user_buf, uint64_t offset, uint64_t length) {
+  size_t local_offset = 0;
+
+  auto block_info_list = metaClient->WriteFile(filename, offset, length);
+  for (auto& block : block_info_list) {
+    // auto ret = rdmaSocket->RdmaWrite(block.serverid, reinterpret_cast<uint64_t>(user_buf) + local_offset, block.offset, block.length, 0, readTaskID++);
+    auto ret = rdmaSocket->RdmaWrite(1, reinterpret_cast<uint64_t>(user_buf) + local_offset, block.offset, block.length, 0, readTaskID++);
+    if (!ret) {
+      cerr << "write error" << endl;
+      return -1;
+    }
+    local_offset += block.length;
+  }
+  assert(local_offset == length);
+  return 0;
+}
+
+int Client::create(std::string& filename) {
+  return metaClient->CreateFile(filename);
+}
+
+int Client::list(std::string& path) {
+  return metaClient->ListDirectory(path);
+}
+
+// int main(int argc, char** argv) {
+//   absl::ParseCommandLine(argc, argv);
+//   std::string target_str = absl::GetFlag(FLAGS_target);
+//   std::string user = absl::GetFlag(FLAGS_user);
+//   // We indicate that the channel isn't authenticated (use of
+//   // InsecureChannelCredentials()).
+//   GreeterClient greeter(
+//       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+//   // std::string user("world");
+//   // while (std::cin >> user) {
+//   //   std::string reply = greeter.SayHello(user);
+//   //   std::cout << "Greeter " << user << " received: " << reply << std::endl;
+//   // }
+//   // auto reply = greeter.Read();
+//   // std::string reply = greeter.SayHello(user);
+//   // std::cout << "Greeter " << user << " received: " << reply << std::endl;
+//   std::srand(std::time(nullptr));
+
+//   for (int i = 0; i < 3; ++i) {
+//     std::string filename = "test" + std::to_string(i) + ".txt";
+//     greeter.CreateFile(filename);
+//   }
+//   // auto l1 = 23368;
+//   // auto offset = 22295;
+//   // auto l2= 2222;
+//   // greeter.WriteFile("test.txt", 0, l1);
+//   // greeter.ReadFile("test.txt", 0, l1);
+//   // greeter.WriteFile("test.txt", offset, l2);
+//   // greeter.ReadFile("test.txt", offset, l2);
+//   // greeter.ReadFile("test.txt", 0, offset + l2);
+
+//   for (int i = 0; i < 3; ++i) {
+//     std::string filename = "test" + std::to_string(i) + ".txt";
+//     auto l1 = rand() % (1 << 15);
+//     auto offset = rand() % l1;
+//     auto l2= rand() % (1 << 14);
+//     greeter.WriteFile(filename, 0, l1);
+//     greeter.ReadFile(filename, 0, l1);
+//     greeter.WriteFile(filename, offset, l2);
+//     greeter.ReadFile(filename, offset, l2);
+//     greeter.ReadFile(filename, 0, offset + l2);
+//   }
+//   greeter.ListDirectory("/");
+//   // auto ret = greeter.ReadFile("test.txt", 0, 100);
+//   return 0;
+// }
+
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint specified by
-  // the argument "--target=" which is the only expected argument.
   std::string target_str = absl::GetFlag(FLAGS_target);
   std::string user = absl::GetFlag(FLAGS_user);
-  // We indicate that the channel isn't authenticated (use of
-  // InsecureChannelCredentials()).
-  GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+  Client client;
   // std::string user("world");
   // while (std::cin >> user) {
   //   std::string reply = greeter.SayHello(user);
@@ -194,7 +301,7 @@ int main(int argc, char** argv) {
 
   for (int i = 0; i < 3; ++i) {
     std::string filename = "test" + std::to_string(i) + ".txt";
-    greeter.CreateFile(filename);
+    client.create(filename);
   }
   // auto l1 = 23368;
   // auto offset = 22295;
@@ -204,19 +311,24 @@ int main(int argc, char** argv) {
   // greeter.WriteFile("test.txt", offset, l2);
   // greeter.ReadFile("test.txt", offset, l2);
   // greeter.ReadFile("test.txt", 0, offset + l2);
+  char* buf = new char[1 << 15];
+  memset(buf, -1, 1 << 15);
 
   for (int i = 0; i < 3; ++i) {
     std::string filename = "test" + std::to_string(i) + ".txt";
     auto l1 = rand() % (1 << 15);
     auto offset = rand() % l1;
     auto l2= rand() % (1 << 14);
-    greeter.WriteFile(filename, 0, l1);
-    greeter.ReadFile(filename, 0, l1);
-    greeter.WriteFile(filename, offset, l2);
-    greeter.ReadFile(filename, offset, l2);
-    greeter.ReadFile(filename, 0, offset + l2);
+    client.write(filename, buf, 0, l1);
+    client.read(filename, buf, 0, l1);
+    cout << "read 1" << buf[0] << endl;
+    client.write(filename, buf, offset, l2);
+    client.read(filename, buf, offset, l2);
+    client.read(filename, buf, 0, offset + l2);
+    break;
   }
-  greeter.ListDirectory("/");
+  // client.ListDirectory("/");
   // auto ret = greeter.ReadFile("test.txt", 0, 100);
   return 0;
 }
+

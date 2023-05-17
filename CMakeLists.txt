@@ -116,12 +116,12 @@ target_link_libraries(storageserver
   ${_PROTOBUF_LIBPROTOBUF})
 
 
-# greeter_client.cc
-file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc)
+# build test
+file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
 foreach(GRPC_TESTSRC
   ${GRPC_TESTS_SOURCES})
   get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
-  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC} ${PROJECT_SOURCE_DIR}/src/fs/file.cpp ${PROJECT_SOURCE_DIR}/src/fs/spacemanager.cpp)
+  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC} ${PROJECT_SOURCE_DIR}/src/fs/file.cpp ${PROJECT_SOURCE_DIR}/src/fs/spacemanager.cpp ${PROJECT_SOURCE_DIR}/src/net/RdmaSocket.cpp ${PROJECT_SOURCE_DIR}/src/tools/debug.cpp ${PROJECT_SOURCE_DIR}/src/net/Configuration.cpp)
   target_link_libraries(${GRPC_TESTSRC_NAME}
     Threads::Threads
     sf_grpc_proto
@@ -130,14 +130,6 @@ foreach(GRPC_TESTSRC
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
-endforeach()
-
-# Build test
-file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
-message("${TEST_SOURCES}")
-foreach (TSTSRC ${TEST_SOURCES})
-    get_filename_component(TSTNAME ${TSTSRC} NAME_WE)
-    add_executable(${TSTNAME} ${TSTSRC})
 endforeach()
 
 
