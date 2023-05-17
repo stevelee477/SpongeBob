@@ -8,6 +8,41 @@
 #include "debug.hpp"
 using namespace std;
 
+#define IB_INTERFACE "ibs47f0"
+
+std::string getIP() {
+    struct ifaddrs *ifaddr, *ifa;
+    int s;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1) 
+    {
+        perror("getifaddrs");
+        exit(EXIT_FAILURE);
+    }
+
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) 
+    {
+        if (ifa->ifa_addr == NULL)
+            continue;  
+
+        s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+        if((strcmp(ifa->ifa_name, IB_INTERFACE)==0)&&(ifa->ifa_addr->sa_family==AF_INET))
+        {
+            if (s != 0)
+            {
+                return std::string("");
+            }
+            break;
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    return std::string(host);
+}
+
 RdmaSocket::RdmaSocket(int _cqNum, uint64_t _mm, uint64_t _mmSize, Configuration* _conf, bool _isServer, uint8_t _Mode) :
 DeviceName(NULL), Port(1), ServerPort(5678), GidIndex(0),
 isRunning(true), isServer(_isServer), cqNum(_cqNum), cqPtr(0),
@@ -21,12 +56,13 @@ mm(_mm), mmSize(_mmSize), conf(_conf), MaxNodeID(1), Mode(_Mode) {
     ServerCount = conf->getServerCount();
     MaxNodeID = ServerCount + 1;
 	if (isServer) {
-		char hname[128] = "192.168.1.3";
-		struct hostent *hent;
-		// gethostname(hname, sizeof(hname));
+		// char hname[128] = "192.168.1.3";
+		// struct hostent *hent;
+		// // gethostname(hname, sizeof(hname));
 
-		hent = gethostbyname(hname);
-		string ip(inet_ntoa(*(struct in_addr*)(hent->h_addr_list[0])));
+		// hent = gethostbyname(hname);
+		// string ip(inet_ntoa(*(struct in_addr*)(hent->h_addr_list[0])));
+        string ip = getIP();
 		MyNodeID = conf->getIDbyIP(ip);
         Debug::notifyInfo("IP = %s, NodeID = %d", ip.c_str(), MyNodeID);
 	} else {
@@ -143,30 +179,6 @@ bool RdmaSocket::CreateResources() {
     }
 
     mrFlags = IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_ATOMIC;
-
-    /* Test Registration Time Cost. */
-    // struct  timeval start, end;
-    // int size;
-    // long long diff;
-    // char *testmm;
-    // size = 0;
-    // for (int i = 1; i <= 4; i++) {
-    //     /* From 4 KB to 400 KB. */
-    //     if (size ==0) {
-    //         size = 1024 * 1024;
-    //     } else {
-    //         size = size * 10;
-    //     }
-    //     testmm = (char *)malloc(size);
-    //     memset(testmm, 0, size);
-    //     gettimeofday(&start, NULL);
-    //     mr = ibv_reg_mr(pd, (void*)testmm, size, mrFlags);
-    //     ibv_dereg_mr(mr);
-    //     gettimeofday(&end, NULL);
-    //     diff = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
-    //     printf("%d\t%ld\n", size, (long)diff);
-    //     free(testmm);
-    // }
 
     /* register the memory buffer */
     Debug::notifyInfo("Register Memory Region");
@@ -379,6 +391,7 @@ bool RdmaSocket::ConnectQueuePair(PeerSockData *peer) {
     } else if (isServer && !RemoteID.isServer && MyNodeID != 1) {
         peer->NodeID = RemoteID.NodeID;
     } else if (isServer && !RemoteID.isServer && MyNodeID == 1) {
+        // Assign NodeID to the client.
         peer->NodeID = MaxNodeID;
         MaxNodeID += 1;
     } else if (!isServer && RemoteID.GivenID != 0) {
@@ -402,8 +415,8 @@ bool RdmaSocket::ConnectQueuePair(PeerSockData *peer) {
 	} else {
 		memset(&MyGid, 0, sizeof(MyGid));
 	}
-
-	LocalMeta.rkey = mr->rkey;
+    if (isServer)
+	    LocalMeta.rkey = mr->rkey;
 	LocalMeta.qpNum[0] = peer->qp[0]->qp_num;
     LocalMeta.qpNum[1] = peer->qp[1]->qp_num;
     if (DoubleQP) {
@@ -467,6 +480,7 @@ int RdmaSocket::DataSyncwithSocket(int sock, int size, char *LocalData, char *Re
     if (rc < size) {
     	Debug::notifyError("Failed writing data during sock_sync_data");
     } else {
+        Debug::notifyInfo("Writing data during sock_sync_data %d bytes", rc);
     	rc = 0;
     }
     while (!rc && totalReadBytes < size) {
@@ -562,7 +576,7 @@ void RdmaSocket::RdmaListen() {
 
     Listener = thread(&RdmaSocket::RdmaAccept, this, sock);
     /* Connect to other servers. */
-    ServerConnect();
+    // ServerConnect();
 
 }
 
@@ -621,6 +635,7 @@ void RdmaSocket::ServerConnect() {
 }
 
 int RdmaSocket::SocketConnect(uint16_t NodeID) {
+    Debug::notifyInfo("Connecting to Node%d %s", NodeID, conf->getIPbyID(NodeID).c_str());
 	struct sockaddr_in RemoteAddress;
 	int sock;
 	struct timeval timeout = {3, 0};
@@ -949,6 +964,7 @@ bool RdmaSocket::RdmaWrite(uint16_t NodeID, uint64_t SourceBuffer, uint64_t DesB
     }
     wr.send_flags = IBV_SEND_SIGNALED;
     wr.wr.rdma.remote_addr = DesBuffer + peer->RegisteredMemory;
+    std::cout << "Fuckkkkkkkk " << std::hex << peer->RegisteredMemory << std::endl;
     Debug::debugItem("Post RDMA_WRITE with remote address = %lx", wr.wr.rdma.remote_addr);
     wr.wr.rdma.rkey        = peer->rkey;
     if (ibv_post_send(peer->qp[TaskID], &wr, &wrBad)) {
