@@ -86,14 +86,16 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 set(FS_SRC ${PROJECT_SOURCE_DIR}/src/fs)
 set(NET_SRC ${PROJECT_SOURCE_DIR}/src/net)
 set(TOOLS_SRC ${PROJECT_SOURCE_DIR}/src/tools)
+set(META_SRC ${PROJECT_SOURCE_DIR}/src/metadata)
+set(STORAGE_SRC ${PROJECT_SOURCE_DIR}/src/storage)
 # set(SERVER_SRC ${PROJECT_SOURCE_DIR}/src/server)
 
 
 # Build server
-file(GLOB_RECURSE SERVER_SRC ${FS_SRC}/*.cpp ${FS_SRC}/*.c ${NET_SRC}/*.cpp ${TOOLS_SRC}/*.cpp )
+file(GLOB_RECURSE SERVER_SRC ${FS_SRC}/*.cpp ${FS_SRC}/*.c ${NET_SRC}/*.cpp ${TOOLS_SRC}/*.cpp ${META_SRC}/*.cpp ${STORAGE_SRC}/*.cpp)
 
 # Build meta server
-add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/spongemeta.cpp ${SERVER_SRC} ${PROJECT_SOURCE_DIR}/src/metadata/MetaServer.cpp)
+add_executable(metaserver ${PROJECT_SOURCE_DIR}/src/server/spongemeta.cpp ${SERVER_SRC})
 target_link_libraries(metaserver
   Threads::Threads
   sf_grpc_proto
@@ -104,7 +106,7 @@ target_link_libraries(metaserver
   ${_PROTOBUF_LIBPROTOBUF})
 
 # Build storage server
-file(GLOB_RECURSE STORAGE_SRC ${PROJECT_SOURCE_DIR}/src/server/spongestorage.cpp ${PROJECT_SOURCE_DIR}/src/storage/*.cpp ${SERVER_SRC} ${PROJECT_SOURCE_DIR}/src/metadata/MetaClient.cpp)
+file(GLOB_RECURSE STORAGE_SRC ${PROJECT_SOURCE_DIR}/src/server/spongestorage.cpp ${SERVER_SRC})
 add_executable(storageserver ${STORAGE_SRC})
 target_link_libraries(storageserver
   Threads::Threads
