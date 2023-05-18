@@ -1,23 +1,12 @@
 #include "MetaClient.hpp"
 #include "spongebob.pb.h"
+#include <cstdint>
+#include <string>
 
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 using namespace::spongebob;
-// using spongebob::Greeter;
-// using spongebob::HelloReply;
-// using spongebob::HelloRequest;
-// using spongebob::ReadReply;
-// using spongebob::ReadRequest;
-// using spongebob::WriteReply;
-// using spongebob::WriteRequest;
-// using spongebob::ListDirectoryReply;
-// using spongebob::ListDirectoryRequest;
-// using spongebob::CreateRequest;
-// using spongebob::CreateReply;
-
-using namespace spongebob;
 
 GreeterClient::GreeterClient(std::shared_ptr<Channel> channel)
     : stub_(Greeter::NewStub(channel)) {}
@@ -50,7 +39,7 @@ std::string GreeterClient::SayHello(const std::string &user) {
 }
 
 int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
-                            uint64_t length) {
+                            uint64_t length, char* buffer) {
   ReadRequest read_request;
   // int res = 0;
   read_request.set_name(filename);
@@ -82,7 +71,7 @@ int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
   return 0;
 }
 
-int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length) {
+int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer) {
   WriteRequest write_request;
   write_request.set_name(filename);
   write_request.set_offset(offset);
@@ -123,6 +112,42 @@ int GreeterClient::CreateFile(const std::string &filename) {
   Status status = stub_->CreateFile(&context, create_request, &create_reply);
 
   return 0;
+}
+
+int GreeterClient::CreateDiretory(const std::string &path) {
+  CreateRequest create_request;
+  create_request.set_name(path);
+  create_request.set_is_dir(true);
+  CreateReply create_reply;
+  ClientContext context;
+
+  Status status = stub_->CreateFile(&context, create_request, &create_reply);
+
+  return 0;
+}
+
+int GreeterClient::OpenFile(const std::string &filename) {
+  OpenRequest open_request;
+  open_request.set_name(filename);
+  open_request.set_is_dir(false);
+  OpenReply open_reply;
+  ClientContext context;
+
+  Status status = stub_->OpenFile(&context, open_request, &open_reply);
+  int fd = open_reply.fd();
+  return fd;
+}
+
+bool GreeterClient::CloseFile(int64_t fd) {
+  CloseRequest close_request;
+  close_request.set_fd(fd);
+  close_request.set_is_dir(false);
+  CloseReply close_reply;
+  ClientContext context;
+
+  Status status = stub_->CloseFile(&context, close_request, &close_reply);
+  bool success  = close_reply.success();
+  return success;
 }
 
 int GreeterClient::ListDirectory(const std::string &path) {

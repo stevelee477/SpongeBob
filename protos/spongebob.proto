@@ -10,6 +10,9 @@ service Greeter {
   rpc WriteFile (WriteRequest) returns (WriteReply) {}
   rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryReply) {}
   rpc CreateFile (CreateRequest) returns (CreateReply) {}
+  rpc CreateDiretory (CreateRequest) returns (CreateReply) {}
+  rpc OpenFile (OpenRequest) returns (OpenReply) {}
+  rpc CloseFile (CloseRequest) returns (CloseReply) {}
   rpc RegisterMemoryRegion (RegisterMemoryRegionRequest) returns (RegisterMemoryRegionReply) {}
 }
 
@@ -68,6 +71,24 @@ message CreateRequest {
 
 message CreateReply {
   uint64 inum = 1;
+}
+
+message OpenRequest {
+  string name = 1;
+  bool is_dir = 2;
+}
+
+message OpenReply {
+  int64 fd = 1;
+}
+
+message CloseRequest {
+  int64 fd = 1;
+  bool is_dir = 2;
+}
+
+message CloseReply {
+  bool success = 1;
 }
 
 // The response message containing the greetings

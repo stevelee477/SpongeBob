@@ -18,7 +18,7 @@ SpaceManager::SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t bl
     //     vec[i] = i;
     // }
     free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin(), vec.end());
-    std::cout << __func__ << ": space start: " << space_start_ << ", space end: " << space_end << std::endl;
+    std::cout << __func__ << ": space start: " << space_start_ << ", space end: " << space_end_ << std::endl;
     std::cout << __func__ << ": " << total_blocks_ << " file blocks in total." << std::endl;
 }
 
@@ -60,4 +60,26 @@ bool SpaceManager::ReclaimSpace(std::vector<uint64_t> &block_list) {
     }
     space_lock_.unlock();
     return true;
+}
+
+void SpaceManager::ResetSpaceRange(uint64_t start_addr, uint64_t length) {
+    uint64_t block_mask = block_size_ - 1;
+    space_start_ = start_addr;
+    space_end_ = space_start_ + length - 1;
+    if (block_mask & space_start_) {
+        std::cerr << "space start or space end is not aligned with block size." << std::endl;
+        space_start_ = (space_start_ + block_size_) & (~block_mask);
+        std::cout << "change space start to " << space_start_ << std::endl;
+    }
+    total_bytes_ = space_end_ - space_start_ + 1;
+    total_blocks_ = total_bytes_ / block_size_;
+    std::vector<uint64_t> vec(total_blocks_);
+    std::iota(vec.begin(), vec.end(), 0);
+    // for (uint64_t i = 0; i < total_blocks_; ++i) {
+    //     vec[i] = i;
+    // }
+    free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin(), vec.end());
+    std::cout << __func__ << ": space start: " << space_start_ << ", space end: " << space_end_ << std::endl;
+    std::cout << __func__ << ": " << total_blocks_ << " file blocks in total." << std::endl;
+
 }

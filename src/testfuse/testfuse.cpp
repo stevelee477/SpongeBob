@@ -22,12 +22,15 @@ using namespace std;
 mutex mtx;
 
 static struct fuse_operations fuse_oper;
-// std::shared_ptr<GreeterClient> spongebobfs;
+std::shared_ptr<GreeterClient> spongebobfs = nullptr;
 
 static int fuse_open(const char *path, struct fuse_file_info *fi)
 {
-	(void) fi;
-
+	int res = spongebobfs->OpenFile(path);
+	if (res == -1) {
+		return -errno;
+	}
+	fi->fh = res;
 	return 0;
 }
 
@@ -50,6 +53,10 @@ static int fuse_getattr(const char *path, struct stat *stbuf, fuse_file_info* fi
 
 static int fuse_release(const char *path, struct fuse_file_info *fi)
 {
+	bool success = spongebobfs->CloseFile(fi->fh);
+	if (!success) {
+		return -errno;
+	}
 	return 0;
 }
 
@@ -65,9 +72,9 @@ static int fuse_read(const char *path, char *buf, size_t size, off_t offset, str
 {
 	int res = 0;
 	std::string str = "Spongebob Read.";
-	printf("fuse_read\n");
+	printf("%s: file path is %s.\n", path);
 	// res = nrfsRead(fs, (nrfsFile)path, buf, (uint64_t)size, (uint64_t)offset);
-	// res = spongebobfs->ReadFile(path, offset, size);
+	res = spongebobfs->ReadFile(path, offset, size, buf);
 	// strcpy(buf, str.c_str());
 	for (size_t i = 0; i < size; ++i) {
 		size_t c = i % 26 + 'a';
@@ -79,16 +86,22 @@ static int fuse_read(const char *path, char *buf, size_t size, off_t offset, str
 static int fuse_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	int res = size;
-	printf("fuse_write: %s\n", buf);
+	printf("%s: file path is %s\n", path);
+	printf("%s: write contents is %s\n", path, buf);
 
 	// lock_guard<mutex> lock(mtx);
 	// res = nrfsWrite(fs, (nrfsFile)path, buf, (uint64_t)size, (uint64_t)offset);
-	// res = spongebobfs->WriteFile(path, offset, size);
+	res = spongebobfs->WriteFile(path, offset, size, buf);
 	return res;
 }
 
 static int fuse_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
+	int res = spongebobfs->OpenFile(path);
+	if (res == -1) {
+		return -errno;
+	}
+	fi->fh = res;
 	return 0;
 }
 
@@ -109,7 +122,7 @@ int main(int argc, char* argv[])
 	fuse_oper.release = fuse_release;
 	fuse_oper.mknod = fuse_mknod;
 	fuse_oper.create = fuse_create;
-	// spongebobfs = make_shared<GreeterClient>(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
+	spongebobfs = make_shared<GreeterClient>(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
 	// fs = nrfsConnect("default", 0, 0);
 	fuse_main(argc, argv, &fuse_oper, NULL);
 }

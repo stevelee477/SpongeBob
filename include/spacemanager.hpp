@@ -17,6 +17,7 @@ public:
     std::vector<uint64_t> AllocateSpace(uint64_t length);
     uint64_t AllocateOneBlock();
     bool ReclaimSpace(std::vector<uint64_t>& block_list);
+    void ResetSpaceRange(uint64_t start_addr, uint64_t length);
     inline uint64_t GetFileBlockSize() { return block_size_; }
 
 private:
@@ -31,13 +32,6 @@ private:
     uint64_t total_blocks_;
     uint64_t cur_blocks_;
 };
-
-
-
-
-
-
-
 
 
 #endif

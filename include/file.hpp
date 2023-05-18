@@ -5,6 +5,7 @@
 #include <string>
 #include <sys/types.h>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <queue>
 #include <mutex>
@@ -43,6 +44,8 @@ private:
     uint64_t inum_;
 };
 
+class File;
+
 class Inode {
 public:
     Inode() = default;
@@ -52,6 +55,7 @@ public:
     uint64_t GetInodeNum() { return inum_;}
     uint64_t GetSize() { return size_; }
     uint64_t GetBlockNum() { return block_info_list_.size(); }
+
     file_block_info GetBlockInfo(uint64_t block_id) { return block_info_list_[block_id]; }
     const std::unordered_map<uint64_t, std::shared_ptr<Dentry>> GetDentryMap() const { return children_; }
     std::shared_ptr<Dentry> GetDentry(const std::string &name);
@@ -59,8 +63,10 @@ public:
 
     void ChangeFileBlockInfoLength(uint64_t index, uint64_t length);
     bool IsDir() { return type_ == FileType::DIR; }
+    bool IsOpened() { return file_fd_ != -1; }
     void SetInodeNum(uint64_t inum) { inum_ = inum; }
     void SetSize(uint64_t size) { size_ = size; }
+    void SetFile(int fd) { file_fd_ = fd; }
     bool AddDentry(const std::string &name, uint64_t inum);
     void AppendFileBlockInfo(uint64_t server_id, uint64_t start_addr, uint64_t length);
 
@@ -68,6 +74,7 @@ private:
     uint64_t inum_;
     FileType type_;
     uint64_t size_{0};
+    int file_fd_ = -1;
     std::unordered_map<uint64_t, std::shared_ptr<Dentry>> children_;
     std::vector<file_block_info> block_info_list_;
 };
@@ -96,6 +103,35 @@ private:
     uint64_t AllocateFreeInode(FileType type);
 };
 
+class File {
+public:
+    File() = default;
+    File(uint64_t inum);
+    ~File() = default;
+    uint64_t inum;
+    uint64_t file_pos;
+};
+
+class FileMap {
+public:
+    FileMap();
+    FileMap(uint64_t size);
+    ~FileMap() = default;
+
+    int AllocateFD(uint64_t inum);
+    int AllocateFD();
+    // int AddFile(uint64_t fd, uint64_t inum);
+    std::shared_ptr<Inode> GetFile(uint64_t fd);
+    bool ReclaimFD(uint64_t fd);
+
+private:
+    uint64_t total_size_;
+    mutable std::mutex file_map_lock_;
+    std::shared_ptr<InodeTable> inode_table_;
+    std::unordered_map<uint64_t, std::shared_ptr<File>> file_map_;
+    std::unordered_set<uint64_t> fd_used_set_;
+    std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>> fd_free_list_;
+};
 
 
 

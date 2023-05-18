@@ -24,25 +24,15 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 using namespace spongebob;
-// using spongebob::Greeter;
-// using spongebob::HelloReply;
-// using spongebob::HelloRequest;
-// using spongebob::ReadRequest;
-// using spongebob::ReadReply;
-// using spongebob::WriteRequest;
-// using spongebob::WriteReply;
-// using spongebob::ListDirectoryRequest;
-// using spongebob::ListDirectoryReply;
-// using spongebob::RegisterMemoryRegionRequest;
-// using spongebob::RegisterMemoryRegionReply;
-// using namespace spongebob;
 
+#define ROOT_INUM (0)
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
 public:
   GreeterServiceImpl() {
     inode_table_ = std::make_shared<InodeTable>(100);
+    file_map_ = std::make_shared<FileMap>(100);
     space_manager_ = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE);
   }
 
@@ -66,7 +56,7 @@ public:
                   ReadReply* reply) override {
     /* Suppose only one directory and its inum is 0. */
     /* Path parsing have not implemented yet. */
-    auto root_inode = inode_table_->GetInode(0);
+    auto root_inode = inode_table_->GetInode(ROOT_INUM);
     if (root_inode == nullptr) {
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return Status::CANCELLED;
@@ -127,7 +117,7 @@ public:
 
   Status WriteFile(ServerContext* context, const WriteRequest* request,
                    WriteReply* reply) override {
-    auto root_inode = inode_table_->GetInode(0);
+    auto root_inode = inode_table_->GetInode(ROOT_INUM);
     if (root_inode == nullptr) {
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return Status::CANCELLED;
@@ -157,7 +147,7 @@ public:
       // todo: change server id, now suppose server id = 0;
       for (int i = 0; i < new_blocks_num; ++i) {
         uint64_t block_nr = space_manager_->AllocateOneBlock();
-        file_inode->AppendFileBlockInfo(0, block_nr * FILE_BLOCK_SIZE, 0);
+        file_inode->AppendFileBlockInfo(cur_server_id_, block_nr * FILE_BLOCK_SIZE, 0);
       }
       std::cout << new_blocks_num << " blocks allocated to file " << file_name << std::endl;
     }
@@ -200,7 +190,7 @@ public:
 
   Status CreateFile(ServerContext* context, const CreateRequest* request,
                   CreateReply* reply) override{
-    auto root_inode = inode_table_->GetInode(0);
+    auto root_inode = inode_table_->GetInode(ROOT_INUM);
     if (root_inode == nullptr) {
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return Status::CANCELLED;
@@ -226,6 +216,10 @@ public:
   Status RegisterMemoryRegion(ServerContext* context, const RegisterMemoryRegionRequest* request,
                   RegisterMemoryRegionReply* reply) override {
     std::cout << "RegisterMemoryRegion: " << request->nodeid() << " 0x" << std::hex << request->addr() << std::dec << " Size: " << request->length() << std::endl;
+    uint64_t start_addr = request->addr();
+    uint64_t length = request->length();
+    space_manager_->ResetSpaceRange(start_addr, length);
+    // space_manager_ = std::make_shared<SpaceManager>(start_addr, length, FILE_BLOCK_SIZE);
     return Status::OK;
   }
 
@@ -251,6 +245,35 @@ public:
     return Status::OK;
 }
 
+  Status OpenFile(ServerContext* context, const OpenRequest* request,
+                  OpenReply* reply) override{
+    auto root_inode = inode_table_->GetInode(ROOT_INUM);
+    if (root_inode == nullptr) {
+      std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
+      return Status::CANCELLED;
+    }
+
+    auto filename = request->name();
+    std::shared_ptr<Dentry> dentry;
+    if ((dentry = root_inode->GetDentry(filename)) == nullptr) {
+      std::cerr << __func__ << ": file " << filename << " doesn't exist, start to create." << std::endl;
+      CreateFile_(filename, false);
+    }
+
+    auto new_fd = file_map_->AllocateFD();
+    std::cout << __func__ << " alloc fd " << new_fd << std::endl;
+    reply->set_fd(new_fd);
+    return Status::OK;
+  }
+
+  Status CloseFile(ServerContext* context, const CloseRequest* request,
+                  CloseReply* reply) override{
+    int64_t fd = request->fd();
+    bool success = file_map_->ReclaimFD(fd);
+    reply->set_success(success);
+    return Status::OK;
+  }
+
 private:
   uint64_t CreateFile_(const std::string &name, bool is_dir) {
     auto root_inode = inode_table_->GetInode(0);
@@ -264,7 +287,9 @@ private:
   }
 
   std::shared_ptr<InodeTable> inode_table_;
-  std::shared_ptr<SpaceManager> space_manager_;
+  std::shared_ptr<SpaceManager> space_manager_ = nullptr;
+  std::shared_ptr<FileMap> file_map_;
+  uint64_t cur_server_id_ = 1;
 };
 
 void RunServer(uint16_t port) {

@@ -107,3 +107,94 @@ bool InodeTable::DeleteInode(uint64_t inum) {
 void InodeTable::CreateRootDir() {
     table_[0] = std::make_shared<Inode>(FileType::DIR, 0);
 }
+
+FileMap::FileMap(): total_size_(100) {}
+
+FileMap::FileMap(uint64_t size): total_size_(size) {
+    std::vector<uint64_t> vec(total_size_ + 3);
+    std::iota(vec.begin() + 3, vec.end(), 1);
+    fd_free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin(), vec.end());
+    std::cout << __func__ << ": " << total_size_ << " fds in fd list." << std::endl;
+}
+
+
+int FileMap::AllocateFD() {
+    file_map_lock_.lock();
+    if (fd_free_list_.empty()) {
+        std::cerr << "No free fd." << std::endl;
+        file_map_lock_.unlock();
+        return -1;
+    }
+    uint64_t new_fd = fd_free_list_.top();
+    fd_free_list_.pop();
+    return new_fd;
+}
+
+bool FileMap::ReclaimFD(uint64_t fd) {
+    file_map_lock_.lock();
+    if (fd_used_set_.find(fd) == fd_used_set_.end()) {
+        std::cerr << "The fd: " << fd << " isn't in the fd list." << std::endl;
+        file_map_lock_.unlock();
+        return false;
+    }
+    fd_used_set_.erase(fd);
+    fd_free_list_.push(fd);
+    file_map_lock_.unlock();
+    return true;
+}
+
+
+// int FileMap::AllocateFD(uint64_t inum) {
+//     std::shared_ptr<Inode> inode = inode_table_->GetInode(inum);
+//     if (inode == nullptr) {
+//         std::cerr << __func__ << ": inode not exits." << std::endl;
+//         return -1;
+//     }
+
+//     if (inode->IsOpened()) {
+//        // todo(ligch): finish
+//     }
+
+//     if (fd_free_list_.empty()) {
+//         std::cerr << "No free fd." << std::endl;
+//         file_map_lock_.unlock();
+//         return -1;
+//     }
+
+
+//     uint64_t new_fd = fd_free_list_.top();
+//     fd_free_list_.pop();
+
+//     auto new_file = std::make_shared<File>(inum);
+
+//     file_map_[new_fd] = new_file;
+//     inode->SetFile(new_fd);
+//     new_file->inum = inum;
+//     new_file->file_pos = 0;
+
+//     return new_fd;
+// }
+
+
+// bool FileMap::ReclaimFD(uint64_t fd) {
+//     file_map_lock_.lock();
+
+//     if (file_map_.find(fd) == file_map_.end()) {
+//         file_map_lock_.unlock();
+//         return false;
+//     }
+
+//     uint64_t inum = file_map_[fd]->inum;
+//     std::shared_ptr<Inode> inode = inode_table_->GetInode(inum);
+//     if (inode == nullptr) {
+//         std::cerr << __func__ << ": inode not exits." << std::endl;
+//         file_map_lock_.unlock();
+//         return -1;
+//     }
+//     inode->SetFile(-1);
+//     file_map_.erase(fd);
+//     fd_free_list_.push(fd);
+//     file_map_lock_.unlock();
+//     return true;
+
+// }
