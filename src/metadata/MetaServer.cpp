@@ -5,6 +5,7 @@
 #include <grpcpp/support/status.h>
 #include <iostream>
 #include <memory>
+#include <ostream>
 #include <string>
 
 #include "absl/flags/flag.h"
@@ -14,6 +15,7 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
+#include <sys/types.h>
 #include "file.hpp"
 #include "spacemanager.hpp"
 #include "spongebob.grpc.pb.h"
@@ -128,6 +130,7 @@ public:
 
     /* File doen't exist, create it. */
     if (file_dentry == nullptr) {
+      std::cout << __func__ << ": file " << file_name << " not exists. Create..." << std::endl;
       CreateFile_(file_name, false);
       file_dentry = root_inode->GetDentry(file_name);
     }
@@ -147,7 +150,7 @@ public:
       // todo: change server id, now suppose server id = 0;
       for (int i = 0; i < new_blocks_num; ++i) {
         uint64_t block_nr = space_manager_->AllocateOneBlock();
-        file_inode->AppendFileBlockInfo(cur_server_id_, block_nr * FILE_BLOCK_SIZE, 0);
+        file_inode->AppendFileBlockInfo(cur_server_id_, block_nr * FILE_BLOCK_SIZE, 0, block_nr);
       }
       std::cout << new_blocks_num << " blocks allocated to file " << file_name << std::endl;
     }
@@ -199,14 +202,15 @@ public:
     auto filename = request->name();
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) != nullptr) {
-      std::cerr << __func__ << ": file " << filename << " already exist, inum" << std::endl;
+      uint64_t inum = dentry->GetInodeNum();
+      std::cout << __func__ << ": file " << filename << " already exist, inum " << inum << std::endl;
       reply->set_inum(dentry->GetInodeNum());
       return Status::OK;
     }
 
     auto new_inum = inode_table_->AllocateFileInode();
-    std::cout << __func__ << " alloc inode " << new_inum << " to file " << filename << std::endl;
-    std::cout << __func__ << " inode table current size: " << inode_table_->GetCurSize() << std::endl;
+    std::cout << __func__ << ": alloc inode " << new_inum << " to file " << filename << std::endl;
+    std::cout << __func__ << ": inode table current size: " << inode_table_->GetCurSize() << std::endl;
     root_inode->AddDentry(filename, new_inum);
     reply->set_inum(new_inum);
 
@@ -223,8 +227,8 @@ public:
     return Status::OK;
   }
 
-  Status ListDirectory(ServerContext* context, const ListDirectoryRequest* request,
-                  ListDirectoryReply* reply) override {
+  Status ReadDirectory(ServerContext* context, const ReadDirectoryRequest* request,
+                  ReadDirectoryReply* reply) override {
     /* The file system only has root directory now. */
     std::string path = request->path();
     auto root_inode = inode_table_->GetInode(0);
@@ -248,20 +252,22 @@ public:
   Status OpenFile(ServerContext* context, const OpenRequest* request,
                   OpenReply* reply) override{
     auto root_inode = inode_table_->GetInode(ROOT_INUM);
+
     if (root_inode == nullptr) {
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return Status::CANCELLED;
     }
 
     auto filename = request->name();
+    std::cout << __func__ << ": start to open file " << filename << std::endl;
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) == nullptr) {
-      std::cerr << __func__ << ": file " << filename << " doesn't exist, start to create." << std::endl;
+      std::cout << __func__ << ": file " << filename << " doesn't exist, start to create." << std::endl;
       CreateFile_(filename, false);
     }
 
     auto new_fd = file_map_->AllocateFD();
-    std::cout << __func__ << " alloc fd " << new_fd << std::endl;
+    std::cout << __func__ << ": alloc fd " << new_fd << std::endl;
     reply->set_fd(new_fd);
     return Status::OK;
   }
@@ -271,6 +277,34 @@ public:
     int64_t fd = request->fd();
     bool success = file_map_->ReclaimFD(fd);
     reply->set_success(success);
+    std::cout << __func__ << ": close file, fd is " << fd << std::endl;
+    return Status::OK;
+  }
+
+  Status RemoveFile(ServerContext* context, const RemoveRequest* request,
+                    RemoveReply* reply) override{
+
+    auto root_inode = inode_table_->GetInode(ROOT_INUM);
+    if (root_inode == nullptr) {
+      std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
+      reply->set_success(false);
+      return Status::CANCELLED;
+    }
+
+    auto filename = request->name();
+    std::shared_ptr<Dentry> dentry;
+    if ((dentry = root_inode->GetDentry(filename)) == nullptr) {
+      std::cout << __func__ << ": file " << filename << " doesn't exist." << std::endl;
+      reply->set_success(false);
+      return Status::OK;
+    }
+
+    uint64_t inum = dentry->GetInodeNum();
+    root_inode->DeleteDentry(filename);
+    space_manager_->ReclaimInodeSpace(inode_table_->GetInode(inum));
+    inode_table_->DeleteInode(inum);
+    std::cout << __func__ << ": " << filename << " is removed. Inode" << inum << " is reclaimed." << std::endl;
+    reply->set_success(true);
     return Status::OK;
   }
 

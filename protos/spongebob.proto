@@ -8,11 +8,12 @@ service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply) {}
   rpc ReadFile (ReadRequest) returns (ReadReply) {}
   rpc WriteFile (WriteRequest) returns (WriteReply) {}
-  rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryReply) {}
+  rpc ReadDirectory (ReadDirectoryRequest) returns (ReadDirectoryReply) {}
   rpc CreateFile (CreateRequest) returns (CreateReply) {}
   rpc CreateDiretory (CreateRequest) returns (CreateReply) {}
   rpc OpenFile (OpenRequest) returns (OpenReply) {}
   rpc CloseFile (CloseRequest) returns (CloseReply) {}
+  rpc RemoveFile (RemoveRequest) returns (RemoveReply) {}
   rpc RegisterMemoryRegion (RegisterMemoryRegionRequest) returns (RegisterMemoryRegionReply) {}
 }
 
@@ -56,11 +57,11 @@ message DentryInfo {
   uint64 size = 4;
 }
 
-message ListDirectoryRequest {
+message ReadDirectoryRequest {
   string path = 1;
 }
 
-message ListDirectoryReply {
+message ReadDirectoryReply {
   repeated DentryInfo dentry_info = 1;
 }
 
@@ -80,6 +81,15 @@ message OpenRequest {
 
 message OpenReply {
   int64 fd = 1;
+}
+
+message RemoveRequest {
+  string name = 1;
+  bool is_dir = 2;
+}
+
+message RemoveReply {
+  bool success = 1;
 }
 
 message CloseRequest {

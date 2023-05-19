@@ -26,6 +26,7 @@ struct file_block_info {
     uint64_t server_id;
     uint64_t start_addr;
     uint64_t length;
+    uint64_t block_nr;
 };
 
 class Dentry {
@@ -57,7 +58,8 @@ public:
     uint64_t GetBlockNum() { return block_info_list_.size(); }
 
     file_block_info GetBlockInfo(uint64_t block_id) { return block_info_list_[block_id]; }
-    const std::unordered_map<uint64_t, std::shared_ptr<Dentry>> GetDentryMap() const { return children_; }
+    const std::unordered_map<uint64_t, std::shared_ptr<Dentry>>& GetDentryMap() const { return children_; }
+    std::vector<file_block_info>& GetBlockInfoList() { return block_info_list_; }
     std::shared_ptr<Dentry> GetDentry(const std::string &name);
 
 
@@ -68,7 +70,8 @@ public:
     void SetSize(uint64_t size) { size_ = size; }
     void SetFile(int fd) { file_fd_ = fd; }
     bool AddDentry(const std::string &name, uint64_t inum);
-    void AppendFileBlockInfo(uint64_t server_id, uint64_t start_addr, uint64_t length);
+    bool DeleteDentry(const std::string &name);
+    void AppendFileBlockInfo(uint64_t server_id, uint64_t start_addr, uint64_t length, uint64_t block_nr);
 
 private:
     uint64_t inum_;

@@ -2,7 +2,9 @@
 #define __SPACE_MANAGER__
 
 
+#include "file.hpp"
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <vector>
@@ -16,6 +18,8 @@ public:
     ~SpaceManager() = default;
     std::vector<uint64_t> AllocateSpace(uint64_t length);
     uint64_t AllocateOneBlock();
+    uint64_t GetSpaceStart() { return space_start_; }
+    bool ReclaimInodeSpace(std::shared_ptr<Inode> inode);
     bool ReclaimSpace(std::vector<uint64_t>& block_list);
     void ResetSpaceRange(uint64_t start_addr, uint64_t length);
     inline uint64_t GetFileBlockSize() { return block_size_; }

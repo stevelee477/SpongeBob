@@ -12,17 +12,26 @@
 #include "spongebob.grpc.pb.h"
 #include <grpcpp/grpcpp.h>
 
+struct dentry_info {
+  std::string name;
+  bool is_dir;
+  uint64_t inum;
+  uint64_t size;
+};
+
+
 class GreeterClient {
 public:
   GreeterClient(std::shared_ptr<grpc::Channel> channel);
   std::string SayHello(const std::string &user);
   int ReadFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer);
-  int WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer);
+  int WriteFile(const std::string &filename, uint64_t offset, uint64_t length, const char* buffer);
   int CreateFile(const std::string &filename);
   int CreateDiretory(const std::string &path);
   int OpenFile(const std::string &filename);
   bool CloseFile(int64_t fd);
-  int ListDirectory(const std::string &path);
+  bool RemoveFile(const std::string &filename);
+  int ReadDirectory(const std::string &path, std::vector<struct dentry_info>& dentry_list);
   int RegisterMemoryRegion(const uint64_t nodeid, const uint64_t addr, const uint64_t length);
 private:
   std::unique_ptr<spongebob::Greeter::Stub> stub_;

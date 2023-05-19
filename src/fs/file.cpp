@@ -26,10 +26,21 @@ bool Inode::AddDentry(const std::string &name, uint64_t inum) {
     return true;
 }
 
+
+bool Inode::DeleteDentry(const std::string &name) {
+    uint64_t hash = std::hash<std::string>{}(name);
+    if (children_.find(hash) == children_.end()) {
+        std::cout << __func__ << ": " << name << " doesn't exist. There's no need to delete." << std::endl;
+        return false;
+    }
+    children_.erase(hash);
+    return true;
+}
+
 std::shared_ptr<Dentry> Inode::GetDentry(const std::string &name) {
     uint64_t hash = std::hash<std::string>{}(name);
     if (children_.find(hash) == children_.end()) {
-        std::cerr << " name doesn't exist. " << std::endl;
+        std::cout << __func__ << ": " << name << " doesn't exist. " << std::endl;
         return nullptr;
     }
     return children_[hash];
@@ -40,8 +51,8 @@ void Inode::ChangeFileBlockInfoLength(uint64_t index, uint64_t length) {
     block_info_list_[index].length = length;
 }
 
-void Inode::AppendFileBlockInfo(uint64_t server_id, uint64_t start_addr, uint64_t length) {
-    block_info_list_.push_back({server_id, start_addr, length});
+void Inode::AppendFileBlockInfo(uint64_t server_id, uint64_t start_addr, uint64_t length, uint64_t block_nr) {
+    block_info_list_.push_back({server_id, start_addr, length, block_nr});
 }
 
 /* Inode Table*/
@@ -112,33 +123,44 @@ FileMap::FileMap(): total_size_(100) {}
 
 FileMap::FileMap(uint64_t size): total_size_(size) {
     std::vector<uint64_t> vec(total_size_ + 3);
-    std::iota(vec.begin() + 3, vec.end(), 1);
-    fd_free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin(), vec.end());
-    std::cout << __func__ << ": " << total_size_ << " fds in fd list." << std::endl;
+    std::iota(vec.begin(), vec.end(), 1);
+    fd_free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin() + 3, vec.end());
+    std::cout << __func__ << ": " << fd_free_list_.size() << " fds in fd list." << std::endl;
+    // while (!fd_free_list_.empty()) {
+    //     std::cout << fd_free_list_.top() << " ";
+    //     fd_free_list_.pop();
+    // }
+    // for (auto fd: fd_free_list_) {
+    //     fd_free_list_
+    //     std::cout << fd << " ";
+    // }
 }
 
 
 int FileMap::AllocateFD() {
     file_map_lock_.lock();
     if (fd_free_list_.empty()) {
-        std::cerr << "No free fd." << std::endl;
+        std::cerr << __func__ << ": No free fd." << std::endl;
         file_map_lock_.unlock();
         return -1;
     }
     uint64_t new_fd = fd_free_list_.top();
+    std::cout << __func__ << ": allocate new fd " << new_fd << std::endl;
     fd_free_list_.pop();
+    file_map_lock_.unlock();
     return new_fd;
 }
 
 bool FileMap::ReclaimFD(uint64_t fd) {
     file_map_lock_.lock();
     if (fd_used_set_.find(fd) == fd_used_set_.end()) {
-        std::cerr << "The fd: " << fd << " isn't in the fd list." << std::endl;
+        std::cerr << __func__ << ": The fd " << fd << " isn't in the fd list." << std::endl;
         file_map_lock_.unlock();
         return false;
     }
     fd_used_set_.erase(fd);
     fd_free_list_.push(fd);
+    std::cout << __func__ << ": reclaim fd " << fd << std::endl;
     file_map_lock_.unlock();
     return true;
 }

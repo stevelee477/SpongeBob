@@ -71,7 +71,7 @@ int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
   return 0;
 }
 
-int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer) {
+int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, const char* buffer) {
   WriteRequest write_request;
   write_request.set_name(filename);
   write_request.set_offset(offset);
@@ -110,7 +110,7 @@ int GreeterClient::CreateFile(const std::string &filename) {
   ClientContext context;
 
   Status status = stub_->CreateFile(&context, create_request, &create_reply);
-
+  std::cout << __func__ << ": create file " << filename << ", inum " << create_reply.inum() << std::endl;
   return 0;
 }
 
@@ -135,6 +135,7 @@ int GreeterClient::OpenFile(const std::string &filename) {
 
   Status status = stub_->OpenFile(&context, open_request, &open_reply);
   int fd = open_reply.fd();
+  std::cout << __func__ << ": open file " << filename << ", fd " << fd << std::endl;
   return fd;
 }
 
@@ -147,15 +148,29 @@ bool GreeterClient::CloseFile(int64_t fd) {
 
   Status status = stub_->CloseFile(&context, close_request, &close_reply);
   bool success  = close_reply.success();
+  std::cout << __func__ << ": close file fd " << fd << ", status " << success << std::endl;
   return success;
 }
 
-int GreeterClient::ListDirectory(const std::string &path) {
-  ListDirectoryRequest list_dir_request;
-  list_dir_request.set_path(path);
-  ListDirectoryReply list_dir_reply;
+bool GreeterClient::RemoveFile(const std::string &filename) {
+  RemoveRequest remove_request;
+  remove_request.set_name(filename);
+  remove_request.set_is_dir(false);
+  RemoveReply remove_reply;
   ClientContext context;
-  Status status = stub_->ListDirectory(&context, list_dir_request, &list_dir_reply);
+
+  Status status = stub_->RemoveFile(&context, remove_request, &remove_reply);
+  bool success  = remove_reply.success();
+  std::cout << __func__ << ": remove file " << filename << ", status " << success << std::endl;
+  return success;
+}
+
+int GreeterClient::ReadDirectory(const std::string &path, std::vector<struct dentry_info> &dir_list) {
+  ReadDirectoryRequest list_dir_request;
+  list_dir_request.set_path(path);
+  ReadDirectoryReply list_dir_reply;
+  ClientContext context;
+  Status status = stub_->ReadDirectory(&context, list_dir_request, &list_dir_reply);
 
   if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
@@ -163,11 +178,11 @@ int GreeterClient::ListDirectory(const std::string &path) {
     return -1;
   }
 
-  for (auto dentry_info: list_dir_reply.dentry_info()) {
-    dentry_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
-    std::cout << dentry_info.name() << ", " << dentry_info.inum() << ", " << dentry_info.size() << std::endl;
+  for (auto d_info: list_dir_reply.dentry_info()) {
+    dir_list.push_back({d_info.name(), d_info.is_dir(), d_info.inum(), d_info.size()});
+    d_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
+    std::cout << d_info.name() << ", " << d_info.inum() << ", " << d_info.size() << std::endl;
   }
-
   return 0;
 }
 
