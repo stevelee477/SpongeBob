@@ -179,7 +179,8 @@ int GreeterClient::ReadDirectory(const std::string &path, std::vector<struct den
   }
 
   for (auto d_info: list_dir_reply.dentry_info()) {
-    dir_list.push_back({d_info.name(), d_info.is_dir(), d_info.inum(), d_info.size()});
+    std::string name = d_info.name();
+    dir_list.push_back({name, d_info.is_dir(), d_info.inum(), d_info.size()});
     d_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
     std::cout << d_info.name() << ", " << d_info.inum() << ", " << d_info.size() << std::endl;
   }

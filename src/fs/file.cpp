@@ -147,6 +147,7 @@ int FileMap::AllocateFD() {
     uint64_t new_fd = fd_free_list_.top();
     std::cout << __func__ << ": allocate new fd " << new_fd << std::endl;
     fd_free_list_.pop();
+    fd_used_set_.insert(new_fd);
     file_map_lock_.unlock();
     return new_fd;
 }

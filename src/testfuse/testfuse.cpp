@@ -1,8 +1,10 @@
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <memory>
-#define FUSE_USE_VERSION 39
-#include <fuse_lowlevel.h>
+#include <string>
+#define FUSE_USE_VERSION 26
+// #include <fuse_lowlevel.h>
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -23,11 +25,13 @@ mutex mtx;
 
 static struct fuse_operations fuse_oper;
 std::shared_ptr<GreeterClient> spongebobfs = nullptr;
+// char den_name_list[32][32];
 
 static int fuse_open(const char *path, struct fuse_file_info *fi)
 {
-	printf("fuse_open: %s\n", path);
-	int res = spongebobfs->OpenFile(path);
+	const char* new_path = path + 1;
+	printf("fuse_open: %s\n", new_path);
+	int res = spongebobfs->OpenFile(new_path);
 	if (res == -1) {
 		return -errno;
 	}
@@ -35,20 +39,27 @@ static int fuse_open(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int fuse_getattr(const char *path, struct stat *stbuf, fuse_file_info* fi)
+static int fuse_getattr(const char *path, struct stat *stbuf)
 {
-	(void) fi;
 	int res = 0;
 	memset(stbuf, 0, sizeof(struct stat));
 	if (strcmp(path, "/") == 0) {
 		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = 2;
+		stbuf->st_size = 0;
 	} else {
-		stbuf->st_mode = S_IFREG | 0444;
-		stbuf->st_nlink = 1;
-		stbuf->st_size = (1ULL << 32);
+		stbuf->st_mode = S_IFREG | 0755;
+		stbuf->st_size = 123;
 	}
+	stbuf->st_nlink = 1;            /* Count of links, set default one link. */
+    stbuf->st_uid = 0;              /* User ID, set default 0. */
+    stbuf->st_gid = 0;              /* Group ID, set default 0. */
+    stbuf->st_rdev = 0;             /* Device ID for special file, set default 0. */
 
+	//stbuf->st_blksize = BLOCK_SIZE;
+
+    stbuf->st_atime = 0;            /* Time of last access, set default 0. */
+    stbuf->st_mtime = 0; 			/* Time of last modification, set default 0. */
+    stbuf->st_ctime = 0;            /* Time of last creation or status change, set default 0. */
 	return res;
 }
 
@@ -62,54 +73,70 @@ static int fuse_release(const char *path, struct fuse_file_info *fi)
 }
 
 static int fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-		       off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags flags)
+		       off_t offset, struct fuse_file_info *fi)
 {
 	// cout << "readdir" << endl;
 	// filler(buf, "fuse_readdir", NULL, 0);
+	const char* new_path = path + 1;
 	vector<struct dentry_info> dentry_list;
+	int success =  spongebobfs->ReadDirectory(new_path, dentry_list);
+	struct stat st;
 	for (auto d_info: dentry_list) {
-		struct stat st;
 		memset(&st, 0, sizeof(st));
-		st.st_ino = d_info.inum;
-		st.st_mode = d_info.is_dir ? S_IFDIR | 0755 : S_IFREG | 0444;
-
-		if (filler(buf, d_info.name.c_str(), &st, 0, (fuse_fill_dir_flags)0)) {
+		// st.st_ino = d_info.inum;
+		st.st_mode = d_info.is_dir ? S_IFDIR: S_IFREG;
+		printf("readdir: %s\n", d_info.name.c_str());
+		if (filler(buf, d_info.name.c_str(), &st, 0)) {
 			break;
 		}
 	}
+	// for (int i = 0; i < dentry_list.size(); ++i) {
+	// 	memset(&st, 0, sizeof(st));
+	// 	// st.st_ino = d_info.inum;
+	// 	st.st_mode = dentry_list[i].is_dir ? S_IFDIR: S_IFREG;
+	// 	// std::cout << __func__ << ": path is " << dentry_list[i].name << std::endl;
+	// 	strcpy(den_name_list[i], dentry_list[i].name.c_str());
+	// 	printf("readdir: %s, path lenth: %lu\n", den_name_list[i], dentry_list[i].name.length());
+	// 	if (filler(buf, den_name_list[i] + 1, &st, 0)) {
+	// 		break;
+	// 	}
+	// }
 	return 0;
 }
 
 static int fuse_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
+	const char* new_path = path + 1;
 	int res = 0;
 	std::string str = "Spongebob Read.";
-	printf("%s: file path is %s.\n", __func__, path);
+	printf("%s: file path is %s.\n", __func__, new_path);
 	// res = nrfsRead(fs, (nrfsFile)path, buf, (uint64_t)size, (uint64_t)offset);
-	res = spongebobfs->ReadFile(path, offset, size, buf);
+	res = spongebobfs->ReadFile(new_path, offset, size, buf);
 	// strcpy(buf, str.c_str());
 	for (size_t i = 0; i < size; ++i) {
 		size_t c = i % 26 + 'a';
 		memcpy(buf + i, &c, sizeof(size_t));
 	}
-	return res;
+	return size;
 }
 
 static int fuse_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
+	const char* new_path = path + 1;
 	int res = size;
-	printf("%s: file path is %s\n", __func__, path);
-	printf("%s: write contents is %s\n", path, buf);
+	printf("%s: file path is %s\n", __func__, new_path);
+	printf("%s: write contents is %s\n", new_path, buf);
 
 	// lock_guard<mutex> lock(mtx);
 	// res = nrfsWrite(fs, (nrfsFile)path, buf, (uint64_t)size, (uint64_t)offset);
-	res = spongebobfs->WriteFile(path, offset, size, buf);
-	return res;
+	res = spongebobfs->WriteFile(new_path, offset, size, buf);
+	return size;
 }
 
 static int fuse_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
-	int res = spongebobfs->OpenFile(path);
+	const char* new_path = path + 1;
+	int res = spongebobfs->OpenFile(new_path);
 	if (res == -1) {
 		return -errno;
 	}
@@ -120,14 +147,50 @@ static int fuse_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 static int fuse_unlink(const char *path)
 {
 	bool res;
-	res = spongebobfs->RemoveFile(path);
+	const char* new_path = path + 1;
+	res = spongebobfs->RemoveFile(new_path);
 	if (!res) {
 		return -errno;
 	}
 	return 0;
 }
 
-static int fuse_mknod(const char *path, mode_t mode, dev_t rdev)
+// static int fuse_mknod(const char *path, mode_t mode, dev_t rdev)
+// {
+// 	return 0;
+// }
+
+static int fuse_chmod(const char *path, mode_t mode)
+{
+	return 0;
+}
+
+static int fuse_access(const char *path, int mask)
+{
+	int res;
+	return 0;
+	// res = nrfsAccess(fs, path);
+}
+
+static int fuse_flush(const char *path, struct fuse_file_info *fi)
+{
+	return 0;
+}
+static int fuse_statfs(const char *path, struct statvfs *stbuf)
+{
+	stbuf->f_bsize = 12345;
+	return 0;
+}
+
+static int fuse_setxattr (const char *path, const char *name, const char *value, size_t size, int flags)
+{
+	return 0;
+}
+static int fuse_mkdir(const char *path, mode_t mode)
+{
+	return 0;
+}
+static int fuse_rmdir(const char *path)
 {
 	return 0;
 }
@@ -136,17 +199,21 @@ static int fuse_mknod(const char *path, mode_t mode, dev_t rdev)
 int main(int argc, char* argv[])
 {
 	spongebobfs = make_shared<GreeterClient>(grpc::CreateChannel("localhost:50055", grpc::InsecureChannelCredentials()));
-
+	fuse_oper.access = fuse_access;
 	fuse_oper.getattr = fuse_getattr;
 	fuse_oper.readdir = fuse_readdir;
 	fuse_oper.read = fuse_read;
 	fuse_oper.write = fuse_write;
 	fuse_oper.open = fuse_open;
 	fuse_oper.release = fuse_release;
-	fuse_oper.mknod = fuse_mknod;
+	// fuse_oper.mknod = fuse_mknod;
 	fuse_oper.create = fuse_create;
 	fuse_oper.unlink = fuse_unlink;
-
+	fuse_oper.statfs = fuse_statfs;
+	fuse_oper.setxattr = fuse_setxattr;
+	fuse_oper.flush = fuse_flush;
+	fuse_oper.mkdir = fuse_mkdir;
+	fuse_oper.rmdir = fuse_rmdir;
 	// fs = nrfsConnect("default", 0, 0);
 	fuse_main(argc, argv, &fuse_oper, NULL);
 }
