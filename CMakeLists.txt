@@ -68,7 +68,7 @@ target_link_libraries(sf_grpc_proto
 
 link_libraries("ibverbs")
 # link_libraries("fuse")
-link_libraries("fuse3")
+link_libraries("fuse")
 # Compiler options
 set (CMAKE_C_FLAGS "-Wall -Wno-deprecated-declarations -Wsign-compare")
 set (CMAKE_CXX_FLAGS "-g ${CMAKE_C_FLAGS} -O0 -DTHREAD -D_FILE_OFFSET_BITS=64")
@@ -119,13 +119,20 @@ target_link_libraries(storageserver
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
-include_directories("/usr/include/fuse3")
-
+# include_directories("/usr/include/fuse3")
+include_directories("/usr/include/fuse")
 file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
 foreach(GRPC_TESTSRC
   ${GRPC_TESTS_SOURCES})
   get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
-  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC} ${PROJECT_SOURCE_DIR}/src/fs/file.cpp ${PROJECT_SOURCE_DIR}/src/fs/spacemanager.cpp ${PROJECT_SOURCE_DIR}/src/net/RdmaSocket.cpp ${PROJECT_SOURCE_DIR}/src/tools/debug.cpp ${PROJECT_SOURCE_DIR}/src/net/Configuration.cpp)
+  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC}
+  ${PROJECT_SOURCE_DIR}/src/fs/file.cpp
+  ${PROJECT_SOURCE_DIR}/src/fs/spacemanager.cpp
+  ${PROJECT_SOURCE_DIR}/src/net/RdmaSocket.cpp
+  ${PROJECT_SOURCE_DIR}/src/tools/debug.cpp
+  ${PROJECT_SOURCE_DIR}/src/net/Configuration.cpp
+  ${PROJECT_SOURCE_DIR}/src/metadata/MetaClient.cpp
+  )
   target_link_libraries(${GRPC_TESTSRC_NAME}
     Threads::Threads
     sf_grpc_proto
@@ -136,6 +143,27 @@ foreach(GRPC_TESTSRC
     ${_PROTOBUF_LIBPROTOBUF})
 endforeach()
 
+include_directories("/usr/include/fuse3")
+# greeter_client.cc
+file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/testfuse/*.cpp)
+foreach(GRPC_TESTSRC
+  ${GRPC_TESTS_SOURCES})
+  get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
+  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC}
+  ${PROJECT_SOURCE_DIR}/src/fs/file.cpp
+  ${PROJECT_SOURCE_DIR}/src/fs/spacemanager.cpp
+  ${PROJECT_SOURCE_DIR}/src/metadata/MetaClient.cpp
+  )
+  target_link_libraries(${GRPC_TESTSRC_NAME}
+    Threads::Threads
+    sf_grpc_proto
+    absl::flags
+    absl::flags_parse
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endforeach()
 
+# include (src/testfuse/CMakeLists.txt)
 
 # add_subdirectory(src/testfuse)
