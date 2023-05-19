@@ -12,7 +12,6 @@
 #include "spongebob.pb.h"
 
 #include "spongebob.grpc.pb.h"
-#include <google/protobuf/repeated_ptr_field.h>
 #include <grpcpp/grpcpp.h>
 
 #include "Client.hpp"

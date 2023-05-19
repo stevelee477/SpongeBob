@@ -38,7 +38,7 @@ std::string GreeterClient::SayHello(const std::string &user) {
   }
 }
 
-google::protobuf::RepeatedPtrField<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
+std::vector<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
                             uint64_t length, char* buffer) {
   ReadRequest read_request;
   // int res = 0;
@@ -52,9 +52,10 @@ google::protobuf::RepeatedPtrField<FileBlockInfo> GreeterClient::ReadFile(const 
   if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
-    return google::protobuf::RepeatedPtrField<FileBlockInfo>();
+    return std::vector<FileBlockInfo>();
   }
-  return read_reply.block_info();
+  std::vector<FileBlockInfo> block_info(read_reply.block_info().begin(), read_reply.block_info().end());
+  return block_info;
   // uint64_t size = read_reply.block_info_size();
   // std::cout << __func__ << ": " << size << " file data blocks received." << std::endl;
   // // auto data_list = read_reply.block_info();
@@ -69,7 +70,7 @@ google::protobuf::RepeatedPtrField<FileBlockInfo> GreeterClient::ReadFile(const 
   // std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
 }
 
-google::protobuf::RepeatedPtrField<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer) {
+std::vector<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer) {
   WriteRequest write_request;
   write_request.set_name(filename);
   write_request.set_offset(offset);
@@ -81,9 +82,10 @@ google::protobuf::RepeatedPtrField<FileBlockInfo> GreeterClient::WriteFile(const
   if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
-    return google::protobuf::RepeatedPtrField<FileBlockInfo>();
+    return std::vector<FileBlockInfo>();
   }
-  return write_reply.block_info();
+  std::vector<FileBlockInfo> block_info(write_reply.block_info().begin(), write_reply.block_info().end());
+  return block_info;
   // uint64_t size = write_reply.block_info_size();
   // std::cout << __func__ << ": " << size << " file data blocks info received." << std::endl;
   // auto data_list = write_reply.block_info();

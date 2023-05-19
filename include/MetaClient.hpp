@@ -12,7 +12,6 @@
 
 #include "spongebob.grpc.pb.h"
 #include <grpcpp/grpcpp.h>
-#include <google/protobuf/repeated_field.h>
 
 using FileBlockInfo = spongebob::FileBlockInfo;
 
@@ -28,8 +27,8 @@ class GreeterClient {
 public:
   GreeterClient(std::shared_ptr<grpc::Channel> channel);
   std::string SayHello(const std::string &user);
-  google::protobuf::RepeatedPtrField<FileBlockInfo> ReadFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer=nullptr);
-  google::protobuf::RepeatedPtrField<FileBlockInfo> WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer=nullptr);
+  std::vector<FileBlockInfo> ReadFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer=nullptr);
+  std::vector<FileBlockInfo> WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer=nullptr);
   int CreateFile(const std::string &filename);
   int CreateDiretory(const std::string &path);
   int OpenFile(const std::string &filename);
