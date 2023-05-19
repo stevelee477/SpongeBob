@@ -125,7 +125,7 @@ file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc ${PROJECT_SOURC
 foreach(GRPC_TESTSRC
   ${GRPC_TESTS_SOURCES})
   get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)
-  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC} ${PROJECT_SOURCE_DIR}/src/fs/file.cpp ${PROJECT_SOURCE_DIR}/src/fs/spacemanager.cpp ${PROJECT_SOURCE_DIR}/src/net/RdmaSocket.cpp ${PROJECT_SOURCE_DIR}/src/tools/debug.cpp ${PROJECT_SOURCE_DIR}/src/net/Configuration.cpp)
+  add_executable(${GRPC_TESTSRC_NAME} ${GRPC_TESTSRC} ${PROJECT_SOURCE_DIR}/src/fs/file.cpp ${PROJECT_SOURCE_DIR}/src/fs/spacemanager.cpp ${PROJECT_SOURCE_DIR}/src/net/RdmaSocket.cpp ${PROJECT_SOURCE_DIR}/src/tools/debug.cpp ${PROJECT_SOURCE_DIR}/src/net/Configuration.cpp ${PROJECT_SOURCE_DIR}/src/client/Client.cpp ${PROJECT_SOURCE_DIR}/src/metadata/MetaClient.cpp)
   target_link_libraries(${GRPC_TESTSRC_NAME}
     Threads::Threads
     sf_grpc_proto

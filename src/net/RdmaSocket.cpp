@@ -900,9 +900,12 @@ bool RdmaSocket::RemoteRead(uint64_t bufferSend, uint16_t NodeID, uint64_t buffe
 }
 
 bool RdmaSocket::DataTransferWorker(int id) {
+    Debug::debugItem("DataTransferWorker %d start.", id);
     TransferTask *task;
     while (true) {
+        Debug::debugItem("DataTransferWorker %d wait task.", id);
         task = queue[id].PopPolling();
+        Debug::debugItem("DataTransferWorker %d get task.", id);
         if (task->OpType) {
             /* Write opration. */
             OutboundHamal(id, task->bufferSend, task->NodeID, task->bufferReceive, task->size);
@@ -964,7 +967,6 @@ bool RdmaSocket::RdmaWrite(uint16_t NodeID, uint64_t SourceBuffer, uint64_t DesB
     }
     wr.send_flags = IBV_SEND_SIGNALED;
     wr.wr.rdma.remote_addr = DesBuffer + peer->RegisteredMemory;
-    std::cout << "Fuckkkkkkkk " << std::hex << peer->RegisteredMemory << std::endl;
     Debug::debugItem("Post RDMA_WRITE with remote address = %lx", wr.wr.rdma.remote_addr);
     wr.wr.rdma.rkey        = peer->rkey;
     if (ibv_post_send(peer->qp[TaskID], &wr, &wrBad)) {
@@ -972,6 +974,7 @@ bool RdmaSocket::RdmaWrite(uint16_t NodeID, uint64_t SourceBuffer, uint64_t DesB
         printf("%s\n", strerror(errno));
         return false;
     }
+    Debug::debugItem("Send with wr_id: %d", wr.wr_id);
 	return true;
 }
 

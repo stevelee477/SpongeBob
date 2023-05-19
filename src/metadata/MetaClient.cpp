@@ -38,7 +38,7 @@ std::string GreeterClient::SayHello(const std::string &user) {
   }
 }
 
-int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
+google::protobuf::RepeatedPtrField<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
                             uint64_t length, char* buffer) {
   ReadRequest read_request;
   // int res = 0;
@@ -52,26 +52,24 @@ int GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
   if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
-    return -1;
+    return google::protobuf::RepeatedPtrField<FileBlockInfo>();
   }
-
-  uint64_t size = read_reply.block_info_size();
-  std::cout << __func__ << ": " << size << " file data blocks received." << std::endl;
-  // auto data_list = read_reply.block_info();
-  for (auto cur_block : read_reply.block_info()) {
-    // std::cout << cur_block.get_serverid();
-    std::cout << cur_block.block_idx() << ", ";
-    std::cout << cur_block.serverid() << ", ";
-    std::cout << cur_block.mem_offset() << ", ";
-    std::cout << cur_block.length() << ", ";
-    std::cout << cur_block.buff_offset() << std::endl;
-  }
-  std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
-
-  return 0;
+  return read_reply.block_info();
+  // uint64_t size = read_reply.block_info_size();
+  // std::cout << __func__ << ": " << size << " file data blocks received." << std::endl;
+  // // auto data_list = read_reply.block_info();
+  // for (auto cur_block : read_reply.block_info()) {
+  //   // std::cout << cur_block.get_serverid();
+  //   std::cout << cur_block.block_idx() << ", ";
+  //   std::cout << cur_block.serverid() << ", ";
+  //   std::cout << cur_block.mem_offset() << ", ";
+  //   std::cout << cur_block.length() << ", ";
+  //   std::cout << cur_block.buff_offset() << std::endl;
+  // }
+  // std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
 }
 
-int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, const char* buffer) {
+google::protobuf::RepeatedPtrField<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer) {
   WriteRequest write_request;
   write_request.set_name(filename);
   write_request.set_offset(offset);
@@ -83,23 +81,23 @@ int GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint6
   if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
-    return -1;
+    return google::protobuf::RepeatedPtrField<FileBlockInfo>();
   }
+  return write_reply.block_info();
+  // uint64_t size = write_reply.block_info_size();
+  // std::cout << __func__ << ": " << size << " file data blocks info received." << std::endl;
+  // auto data_list = write_reply.block_info();
 
-  uint64_t size = write_reply.block_info_size();
-  std::cout << __func__ << ": " << size << " file data blocks info received." << std::endl;
-  auto data_list = write_reply.block_info();
-
-  for (auto cur_block : write_reply.block_info()) {
-    // std::cout << cur_block.get_serverid();
-    std::cout << cur_block.block_idx() << ", ";
-    std::cout << cur_block.serverid() << ", ";
-    std::cout << cur_block.mem_offset() << ", ";
-    std::cout << cur_block.length() << ", ";
-    std::cout << cur_block.buff_offset() << std::endl;
-  }
-  std::cout << __func__ << ": " << "write file finished." << std::endl << std::endl;
-  return 0;
+  // for (auto cur_block : write_reply.block_info()) {
+  //   // std::cout << cur_block.get_serverid();
+  //   std::cout << cur_block.block_idx() << ", ";
+  //   std::cout << cur_block.serverid() << ", ";
+  //   std::cout << cur_block.mem_offset() << ", ";
+  //   std::cout << cur_block.length() << ", ";
+  //   std::cout << cur_block.buff_offset() << std::endl;
+  // }
+  // std::cout << __func__ << ": " << "write file finished." << std::endl << std::endl;
+  // return 0;
 }
 
 int GreeterClient::CreateFile(const std::string &filename) {
