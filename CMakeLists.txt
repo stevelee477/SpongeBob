@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 project(SpongeBob C CXX)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Threads REQUIRED)
@@ -132,7 +132,7 @@ foreach(GRPC_TESTSRC
   ${PROJECT_SOURCE_DIR}/src/tools/debug.cpp
   ${PROJECT_SOURCE_DIR}/src/net/Configuration.cpp
   ${PROJECT_SOURCE_DIR}/src/metadata/MetaClient.cpp
-  )
+   ${PROJECT_SOURCE_DIR}/src/client/Client.cpp ${PROJECT_SOURCE_DIR}/src/metadata/MetaClient.cpp)
   target_link_libraries(${GRPC_TESTSRC_NAME}
     Threads::Threads
     sf_grpc_proto

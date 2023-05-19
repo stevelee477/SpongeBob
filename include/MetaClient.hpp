@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/status.h>
@@ -12,6 +13,8 @@
 #include "spongebob.grpc.pb.h"
 #include <grpcpp/grpcpp.h>
 
+using FileBlockInfo = spongebob::FileBlockInfo;
+
 struct dentry_info {
   std::string name;
   bool is_dir;
@@ -24,8 +27,8 @@ class GreeterClient {
 public:
   GreeterClient(std::shared_ptr<grpc::Channel> channel);
   std::string SayHello(const std::string &user);
-  int ReadFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer);
-  int WriteFile(const std::string &filename, uint64_t offset, uint64_t length, const char* buffer);
+  std::vector<FileBlockInfo> ReadFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer=nullptr);
+  std::vector<FileBlockInfo> WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer=nullptr);
   int CreateFile(const std::string &filename);
   int CreateDiretory(const std::string &path);
   int OpenFile(const std::string &filename);
