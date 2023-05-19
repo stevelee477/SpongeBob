@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <numeric>
 
-SpaceManager::SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t block_size)
-    :space_start_(space_start), space_end_(space_end), block_size_(block_size), cur_blocks_(0) {
+SpaceManager::SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t block_size, uint64_t server_id)
+    :space_start_(space_start), space_end_(space_end), block_size_(block_size), cur_blocks_(0), server_id_(server_id) {
     uint64_t block_mask = block_size - 1;
     if (block_mask & space_start_) {
         std::cout << __func__ <<  ": space start or space end is not aligned with block size." << std::endl;
@@ -47,6 +47,7 @@ std::vector<uint64_t> SpaceManager::AllocateSpace(uint64_t length) {
 }
 
 uint64_t SpaceManager::AllocateOneBlock() {
+    std::cout << "Allocate one block @" << server_id_ << std::endl;
     space_lock_.lock();
     uint64_t block_nr = free_list_.top();
     free_list_.pop();
@@ -68,7 +69,9 @@ bool SpaceManager::ReclaimInodeSpace(std::shared_ptr<Inode> inode) {
 
     for (auto block_info: block_info_list) {
         uint64_t server_id = block_info.server_id;
-        (void) server_id;
+        // (void) server_id;
+        if (server_id != server_id_)
+            continue;
         uint64_t block_nr = block_info.block_nr;
         std::cout << block_nr << " ";
         free_list_.push(block_nr);

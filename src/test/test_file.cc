@@ -30,7 +30,7 @@ int main() {
         }
     }
 
-    SpaceManager space_manager(123, FILE_BLOCK_SIZE << 8, FILE_BLOCK_SIZE);
+    SpaceManager space_manager(123, FILE_BLOCK_SIZE << 8, FILE_BLOCK_SIZE, 1);
 
 
 

@@ -6,5 +6,9 @@
 			<id>1</id>
 			<ip>192.168.10.3</ip>
 		</node>
+		<node>
+			<id>2</id>
+			<ip>192.168.10.4</ip>
+		</node>
 	</storage>
 </address>

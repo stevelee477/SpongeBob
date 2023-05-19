@@ -7,6 +7,9 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <map>
+#include <iterator>
+#include <random>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -16,6 +19,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <sys/types.h>
+#include <Configuration.hpp>
 #include "file.hpp"
 #include "spacemanager.hpp"
 #include "spongebob.grpc.pb.h"
@@ -29,13 +33,17 @@ using namespace spongebob;
 
 #define ROOT_INUM (0)
 
+inline int randInt(int n) {
+  return rand() % n;
+}
+
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
 public:
-  GreeterServiceImpl() {
+  GreeterServiceImpl(int _server_count = 1) : server_count(_server_count) {
     inode_table_ = std::make_shared<InodeTable>(100);
     file_map_ = std::make_shared<FileMap>(100);
-    space_manager_ = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE);
+    // space_manager_ = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE, server_count);
   }
 
   Status SayHello(ServerContext* context, const HelloRequest* request,
@@ -149,8 +157,20 @@ public:
       int new_blocks_num = total_blocks - file_inode->GetBlockNum();
       // todo: change server id, now suppose server id = 0;
       for (int i = 0; i < new_blocks_num; ++i) {
-        uint64_t block_nr = space_manager_->AllocateOneBlock();
-        file_inode->AppendFileBlockInfo(cur_server_id_, block_nr * FILE_BLOCK_SIZE, 0, block_nr);
+        // auto server_id = randInt(server_count);
+        // if (server_id == 0)
+        //   server_id = server_count;
+        // std::cout << "Rand choose server " << server_id << std::endl;
+        auto r = randInt(space_manager_.size());
+        int curr_idx = 0, server_id = -1;
+        for (auto iter = space_manager_.begin(); iter != space_manager_.end(); ++iter, ++curr_idx) {
+          if (curr_idx == r) {
+            server_id = iter->first;
+            break;
+          }
+        }
+        uint64_t block_nr = space_manager_[server_id]->AllocateOneBlock();
+        file_inode->AppendFileBlockInfo(server_id, block_nr * FILE_BLOCK_SIZE, 0, block_nr);
       }
       std::cout << new_blocks_num << " blocks allocated to file " << file_name << std::endl;
     }
@@ -222,7 +242,9 @@ public:
     std::cout << "RegisterMemoryRegion: " << request->nodeid() << " 0x" << std::hex << request->addr() << std::dec << " Size: " << request->length() << std::endl;
     uint64_t start_addr = request->addr();
     uint64_t length = request->length();
-    space_manager_->ResetSpaceRange(start_addr, length);
+    space_manager_[request->nodeid()] = std::make_shared<SpaceManager>(start_addr, start_addr + length - 1, FILE_BLOCK_SIZE, request->nodeid());
+    std::cout << "Fuck here\n";
+    // space_manager_->ResetSpaceRange(start_addr, length);
     // space_manager_ = std::make_shared<SpaceManager>(start_addr, length, FILE_BLOCK_SIZE);
     return Status::OK;
   }
@@ -301,7 +323,8 @@ public:
 
     uint64_t inum = dentry->GetInodeNum();
     root_inode->DeleteDentry(filename);
-    space_manager_->ReclaimInodeSpace(inode_table_->GetInode(inum));
+    for (auto &sm : space_manager_) 
+      sm.second->ReclaimInodeSpace(inode_table_->GetInode(inum));
     inode_table_->DeleteInode(inum);
     std::cout << __func__ << ": " << filename << " is removed. Inode" << inum << " is reclaimed." << std::endl;
     reply->set_success(true);
@@ -320,15 +343,17 @@ private:
     return new_inum;
   }
 
+  int server_count;
   std::shared_ptr<InodeTable> inode_table_;
-  std::shared_ptr<SpaceManager> space_manager_ = nullptr;
+  std::map<int, std::shared_ptr<SpaceManager>> space_manager_;
   std::shared_ptr<FileMap> file_map_;
   uint64_t cur_server_id_ = 1;
 };
 
 void RunServer(uint16_t port) {
+  auto conf = new Configuration();
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
-  GreeterServiceImpl service;
+  GreeterServiceImpl service(conf->getServerCount());
 
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();

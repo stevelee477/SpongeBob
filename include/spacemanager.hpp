@@ -14,7 +14,7 @@
 class SpaceManager {
 public:
     SpaceManager() = delete;
-    SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t block_size);
+    SpaceManager(uint64_t space_start, uint64_t space_end, uint64_t block_size, uint64_t server_id_);
     ~SpaceManager() = default;
     std::vector<uint64_t> AllocateSpace(uint64_t length);
     uint64_t AllocateOneBlock();
@@ -35,6 +35,8 @@ private:
     uint64_t block_size_;
     uint64_t total_blocks_;
     uint64_t cur_blocks_;
+
+    uint64_t server_id_;
 };
 
 
