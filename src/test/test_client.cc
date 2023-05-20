@@ -35,17 +35,82 @@ int main(int argc, char **argv) {
     client.create(filename);
   }
 
-  char *buf = new char[1 << 15];
-  memset(buf, -1, 1 << 15);
+  char *buf = new char[1 * 1024 * 1024 * 1024];
+  // memset(buf, -1, 1 << 20);
 
   std::string filename = "test" + std::to_string(1) + ".txt";
-  for (int i = 0; i < 10000; i++)
+  for (int i = 0; i < 100000; i++)
     buf[i] = 0xcc;
-  client.write(filename, buf, 0, 10000);
-  for (int i = 0; i < 1000; i++)
+  client.write(filename, buf, 0, 20000);
+  for (int i = 0; i < 10000; i++)
     buf[i] = 0x00;
-  client.read(filename, buf, 0, 10000);
+  client.read(filename, buf, 0, 20000);
   cout << "read " << std::hex << static_cast<int>(buf[5000]) << endl;
+
+  std::srand(std::time(nullptr));
+
+
+  // // auto l1 = 23368;
+  // // auto offset = 22295;
+  // // auto l2= 2222;
+  // // greeter.WriteFile("test.txt", 0, l1);
+  // // greeter.ReadFile("test.txt", 0, l1);
+  // // greeter.WriteFile("test.txt", offset, l2);
+  // // greeter.ReadFile("test.txt", offset, l2);
+  // // greeter.ReadFile("test.txt", 0, offset + l2);
+
+  // for (int i = 0; i < 3; ++i) {
+  //   std::string filename = "test" + std::to_string(i) + ".txt";
+  //   greeter.CreateFile(filename);
+  // }
+  // std::cout << std::endl;
+  // for (int i = 0; i < 3; ++i) {
+  //   std::string filename = "test" + std::to_string(i) + ".txt";
+  //   greeter.RemoveFile(filename);
+  // }
+  // std::cout << std::endl;
+
+  // char buffer[1024];
+  // for (int i = 0; i < 3; ++i) {
+  //   std::string filename = "test" + std::to_string(i) + ".txt";
+  //   greeter.OpenFile(filename);
+  // }
+  // std::cout << std::endl;
+  // for (int i = 0; i < 3; ++i) {
+  //   std::string filename = "test" + std::to_string(i) + ".txt";
+  //   greeter.CreateFile(filename);
+  // }
+  // std::cout << std::endl;
+  // for (int i = 0; i < 3; ++i) {
+  //   std::string filename = "test" + std::to_string(i) + ".txt";
+  //   greeter.RemoveFile(filename);
+  // }
+
+  // std::cout << std::endl;
+  // for (int i = 0; i < 3; ++i) {
+  //   std::string filename = "test" + std::to_string(i) + ".txt";
+  //   auto l1 = rand() % (1 << 15);
+  //   auto offset = rand() % l1;
+  //   auto l2= rand() % (1 << 14);
+  //   greeter.WriteFile(filename, 0, l1, buffer);
+  //   greeter.ReadFile(filename, 0, l1, buffer);
+  //   greeter.WriteFile(filename, offset, l2, buffer);
+  //   greeter.ReadFile(filename, offset, l2, buffer);
+  //   greeter.ReadFile(filename, 0, offset + l2, buffer);
+  // }
+
+  // std::vector<struct dentry_info> dentry_list;
+  // greeter.ReadDirectory("/", dentry_list);
+  // greeter.RemoveFile("test1.txt");
+  // std::cout << std::endl;
+
+  // greeter.ReadDirectory("/", dentry_list);
+  // greeter.RemoveFile("test2.txt");
+
+  // std::cout << std::endl;
+  // greeter.ReadDirectory("/", dentry_list);
+  // // auto ret = greeter.ReadFile("test.txt", 0, 100);
+
 
   return 0;
 }
