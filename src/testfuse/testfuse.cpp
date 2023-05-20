@@ -111,7 +111,17 @@ static int fuse_read(const char *path, char *buf, size_t size, off_t offset, str
 	std::string str = "Spongebob Read.";
 	printf("%s: file path is %s.\n", __func__, new_path);
 	// res = nrfsRead(fs, (nrfsFile)path, buf, (uint64_t)size, (uint64_t)offset);
-	res = spongebobfs->ReadFile(new_path, offset, size, buf);
+	auto ret_list = spongebobfs->ReadFile(new_path, offset, size, buf);
+	std::cout << __func__ << ": Received the following block info..." << std::endl;
+	for (auto cur_block : ret_list) {
+		// std::cout << cur_block.get_serverid();
+		std::cout << cur_block.block_idx() << ", ";
+		std::cout << cur_block.serverid() << ", ";
+		std::cout << cur_block.mem_offset() << ", ";
+		std::cout << cur_block.length() << ", ";
+		std::cout << cur_block.buff_offset() << std::endl;
+	}
+
 	// strcpy(buf, str.c_str());
 	for (size_t i = 0; i < size; ++i) {
 		size_t c = i % 26 + 'a';
@@ -128,8 +138,16 @@ static int fuse_write(const char *path, const char *buf, size_t size, off_t offs
 	printf("%s: write contents is %s\n", new_path, buf);
 
 	// lock_guard<mutex> lock(mtx);
-	// res = nrfsWrite(fs, (nrfsFile)path, buf, (uint64_t)size, (uint64_t)offset);
-	res = spongebobfs->WriteFile(new_path, offset, size, buf);
+	auto ret_list = spongebobfs->WriteFile(new_path, offset, size, buf);
+	std::cout << __func__ << ": Received the following block info..." << std::endl;
+	for (auto cur_block : ret_list) {
+		// std::cout << cur_block.get_serverid();
+		std::cout << cur_block.block_idx() << ", ";
+		std::cout << cur_block.serverid() << ", ";
+		std::cout << cur_block.mem_offset() << ", ";
+		std::cout << cur_block.length() << ", ";
+		std::cout << cur_block.buff_offset() << std::endl;
+	}
 	return size;
 }
 
@@ -141,6 +159,7 @@ static int fuse_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 		return -errno;
 	}
 	fi->fh = res;
+
 	return 0;
 }
 
@@ -155,10 +174,10 @@ static int fuse_unlink(const char *path)
 	return 0;
 }
 
-// static int fuse_mknod(const char *path, mode_t mode, dev_t rdev)
-// {
-// 	return 0;
-// }
+static int fuse_mknod(const char *path, mode_t mode, dev_t rdev)
+{
+	return 0;
+}
 
 static int fuse_chmod(const char *path, mode_t mode)
 {
@@ -194,7 +213,9 @@ static int fuse_rmdir(const char *path)
 {
 	return 0;
 }
-
+static int fuse_utimens(const char * path, const struct timespec tv[2]) {
+	return 0;
+}
 
 int main(int argc, char* argv[])
 {
@@ -207,6 +228,7 @@ int main(int argc, char* argv[])
 	fuse_oper.open = fuse_open;
 	fuse_oper.release = fuse_release;
 	// fuse_oper.mknod = fuse_mknod;
+	fuse_oper.utimens = fuse_utimens;
 	fuse_oper.create = fuse_create;
 	fuse_oper.unlink = fuse_unlink;
 	fuse_oper.statfs = fuse_statfs;
@@ -214,6 +236,7 @@ int main(int argc, char* argv[])
 	fuse_oper.flush = fuse_flush;
 	fuse_oper.mkdir = fuse_mkdir;
 	fuse_oper.rmdir = fuse_rmdir;
+
 	// fs = nrfsConnect("default", 0, 0);
 	fuse_main(argc, argv, &fuse_oper, NULL);
 }

@@ -70,7 +70,7 @@ std::vector<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, 
   // std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
 }
 
-std::vector<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer) {
+std::vector<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, const char* buffer) {
   WriteRequest write_request;
   write_request.set_name(filename);
   write_request.set_offset(offset);
