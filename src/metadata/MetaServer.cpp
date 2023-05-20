@@ -43,6 +43,9 @@ public:
   GreeterServiceImpl(int _server_count = 1) : server_count(_server_count) {
     inode_table_ = std::make_shared<InodeTable>(100);
     file_map_ = std::make_shared<FileMap>(100);
+    //ligch: just for fuse tests
+    space_manager_[1] = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE, 1);
+    space_manager_[2] = std::make_shared<SpaceManager>(0, 1 << 20, FILE_BLOCK_SIZE, 2);
     // space_manager_ = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE, server_count);
   }
 
@@ -74,23 +77,27 @@ public:
     std::string file_name = request->name();
     uint64_t start_offset = request->offset();
     uint64_t read_length = request->length();
-    uint64_t to_read_length = read_length;
-    uint64_t buff_offset = 0;
     auto file_dentry = root_inode->GetDentry(file_name);
+    uint64_t file_inum = file_dentry->GetInodeNum();
 
     if (file_dentry == nullptr) {
       std::cerr << __func__ << ": file " << request->name() << " doesn't exist." << std::endl;
       return Status::CANCELLED;
     }
 
-    uint64_t file_inum = file_dentry->GetInodeNum();
     auto file_inode = inode_table_->GetInode(file_inum);
     assert(file_inode != nullptr);
 
     if (start_offset + read_length - 1 > file_inode->GetSize()) {
-      std::cerr << __func__ << ": read out of range." << std::endl;
-      return Status::CANCELLED;
+      uint64_t old_read_length = read_length;
+      read_length = file_inode->GetSize() - start_offset;
+      std::cout << __func__ << ": expected read size out of range." << std::endl;
+      std::cout << __func__ << ": read length change from " << old_read_length << " to " << read_length << std::endl;
+      // return Status::CANCELLED;
     }
+
+    uint64_t to_read_length = read_length;
+    uint64_t buff_offset = 0;
 
     uint64_t start_block = start_offset / FILE_BLOCK_SIZE;
 
@@ -323,7 +330,7 @@ public:
 
     uint64_t inum = dentry->GetInodeNum();
     root_inode->DeleteDentry(filename);
-    for (auto &sm : space_manager_) 
+    for (auto &sm : space_manager_)
       sm.second->ReclaimInodeSpace(inode_table_->GetInode(inum));
     inode_table_->DeleteInode(inum);
     std::cout << __func__ << ": " << filename << " is removed. Inode" << inum << " is reclaimed." << std::endl;
