@@ -1,4 +1,5 @@
 #include "Client.hpp"
+#include <cstdint>
 
 Client::Client() {
   Configuration *config = new Configuration();
@@ -16,8 +17,8 @@ Client::Client() {
 int Client::read(std::string &filename, char *user_buf, uint64_t offset,
                  uint64_t length) {
   size_t local_offset = 0;
-
-  auto block_info_list = metaClient->ReadFile(filename, offset, length);
+  uint64_t bytes_read = 0;
+  auto block_info_list = metaClient->ReadFile(filename, offset, length, bytes_read);
   for (auto &block : block_info_list) {
     auto ret = rdmaSocket->RemoteRead(reinterpret_cast<uint64_t>(user_buf),
                                       block.serverid(), block.mem_offset(),
@@ -36,8 +37,8 @@ int Client::read(std::string &filename, char *user_buf, uint64_t offset,
 int Client::write(std::string &filename, char *user_buf, uint64_t offset,
                   uint64_t length) {
   size_t local_offset = 0;
-
-  auto block_info_list = metaClient->WriteFile(filename, offset, length);
+  uint64_t bytes_write = 0;
+  auto block_info_list = metaClient->WriteFile(filename, offset, length, bytes_write);
   for (auto &block : block_info_list) {
     Debug::debugItem("Client Write Local buffer 0x%lx, serverid %d, "
                      "mem_offset %d, length %d, "

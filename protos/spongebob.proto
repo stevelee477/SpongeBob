@@ -38,6 +38,7 @@ message FileBlockInfo {
 
 message ReadReply {
   repeated FileBlockInfo block_info = 1;
+  uint64 bytes_read = 2;
 }
 
 message WriteRequest {
@@ -48,6 +49,7 @@ message WriteRequest {
 
 message WriteReply {
   repeated FileBlockInfo block_info = 1;
+  uint64 bytes_write = 2;
 }
 
 message DentryInfo {

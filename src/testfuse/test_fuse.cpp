@@ -1,8 +1,11 @@
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <features.h>
 #include <memory>
 #include <string>
+#include <sys/types.h>
 #define FUSE_USE_VERSION 26
 // #include <fuse_lowlevel.h>
 #include <iostream>
@@ -109,9 +112,10 @@ static int fuse_read(const char *path, char *buf, size_t size, off_t offset, str
 	const char* new_path = path + 1;
 	int res = 0;
 	std::string str = "Spongebob Read.";
-	printf("%s: file path is %s.\n", __func__, new_path);
+	uint64_t bytes_read = 0;
+	printf("%s: file path is %s, offset is %lu, read size is %lu.\n", __func__, new_path, offset, size);
 	// res = nrfsRead(fs, (nrfsFile)path, buf, (uint64_t)size, (uint64_t)offset);
-	auto ret_list = spongebobfs->ReadFile(new_path, offset, size, buf);
+	auto ret_list = spongebobfs->ReadFile(new_path, offset, size, bytes_read, buf);
 	std::cout << __func__ << ": Received the following block info..." << std::endl;
 	for (auto cur_block : ret_list) {
 		// std::cout << cur_block.get_serverid();
@@ -127,7 +131,8 @@ static int fuse_read(const char *path, char *buf, size_t size, off_t offset, str
 		size_t c = i % 26 + 'a';
 		memcpy(buf + i, &c, sizeof(size_t));
 	}
-	return size;
+	std::cout << __func__ << ": Totally " << bytes_read << " bytes read." << std::endl;
+	return bytes_read;
 }
 
 static int fuse_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
@@ -138,7 +143,8 @@ static int fuse_write(const char *path, const char *buf, size_t size, off_t offs
 	printf("%s: write contents is %s\n", new_path, buf);
 
 	// lock_guard<mutex> lock(mtx);
-	auto ret_list = spongebobfs->WriteFile(new_path, offset, size, buf);
+	uint64_t bytes_write = 0;
+	auto ret_list = spongebobfs->WriteFile(new_path, offset, size, bytes_write, buf);
 	std::cout << __func__ << ": Received the following block info..." << std::endl;
 	for (auto cur_block : ret_list) {
 		// std::cout << cur_block.get_serverid();
@@ -148,7 +154,8 @@ static int fuse_write(const char *path, const char *buf, size_t size, off_t offs
 		std::cout << cur_block.length() << ", ";
 		std::cout << cur_block.buff_offset() << std::endl;
 	}
-	return size;
+	std::cout << __func__ << ": Totally " << bytes_write << " bytes written." << std::endl;
+	return bytes_write;
 }
 
 static int fuse_create(const char *path, mode_t mode, struct fuse_file_info *fi)
@@ -217,6 +224,16 @@ static int fuse_utimens(const char * path, const struct timespec tv[2]) {
 	return 0;
 }
 
+static int fuse_getxattr(const char *path, const char *name, char *value, size_t size)
+{
+	return 0;
+}
+
+static int fuse_fgetattr(const char *path, struct stat *statbuf, struct fuse_file_info *fi)
+{
+	return 0;
+}
+
 int main(int argc, char* argv[])
 {
 	spongebobfs = make_shared<GreeterClient>(grpc::CreateChannel("localhost:50055", grpc::InsecureChannelCredentials()));
@@ -236,7 +253,9 @@ int main(int argc, char* argv[])
 	fuse_oper.flush = fuse_flush;
 	fuse_oper.mkdir = fuse_mkdir;
 	fuse_oper.rmdir = fuse_rmdir;
-
+	fuse_oper.getxattr = fuse_getxattr;
+	fuse_oper.setxattr = fuse_setxattr;
+	fuse_oper.fgetattr = fuse_fgetattr;
 	// fs = nrfsConnect("default", 0, 0);
 	fuse_main(argc, argv, &fuse_oper, NULL);
 }

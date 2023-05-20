@@ -27,8 +27,8 @@ class GreeterClient {
 public:
   GreeterClient(std::shared_ptr<grpc::Channel> channel);
   std::string SayHello(const std::string &user);
-  std::vector<FileBlockInfo> ReadFile(const std::string &filename, uint64_t offset, uint64_t length, char* buffer=nullptr);
-  std::vector<FileBlockInfo> WriteFile(const std::string &filename, uint64_t offset, uint64_t length, const char* buffer=nullptr);
+  std::vector<FileBlockInfo> ReadFile(const std::string &filename, uint64_t offset, uint64_t length, uint64_t &bytes_read, char* buffer=nullptr);
+  std::vector<FileBlockInfo> WriteFile(const std::string &filename, uint64_t offset, uint64_t length, uint64_t &bytes_write, const char* buffer=nullptr);
   int CreateFile(const std::string &filename);
   int CreateDiretory(const std::string &path);
   int OpenFile(const std::string &filename);

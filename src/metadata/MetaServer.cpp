@@ -129,6 +129,7 @@ public:
       buff_offset += FILE_BLOCK_SIZE;
       to_read_length = 0;
     }
+    reply->set_bytes_read(read_length);
     return Status::OK;
   }
 
@@ -215,6 +216,7 @@ public:
     }
 
     file_inode->SetSize(start_offset + write_length - to_write_length - 1);
+    reply->set_bytes_write(write_length);
     return Status::OK;
   }
 

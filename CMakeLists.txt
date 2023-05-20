@@ -143,7 +143,7 @@ foreach(GRPC_TESTSRC
     ${_PROTOBUF_LIBPROTOBUF})
 endforeach()
 
-include_directories("/usr/include/fuse3")
+include_directories("/usr/include/fuse")
 # greeter_client.cc
 file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/testfuse/*.cpp)
 foreach(GRPC_TESTSRC

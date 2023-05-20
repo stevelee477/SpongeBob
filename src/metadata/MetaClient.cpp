@@ -39,7 +39,7 @@ std::string GreeterClient::SayHello(const std::string &user) {
 }
 
 std::vector<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
-                            uint64_t length, char* buffer) {
+                            uint64_t length, uint64_t &byted_read, char* buffer) {
   ReadRequest read_request;
   // int res = 0;
   read_request.set_name(filename);
@@ -54,6 +54,7 @@ std::vector<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, 
               << std::endl;
     return std::vector<FileBlockInfo>();
   }
+  byted_read = read_reply.bytes_read();
   std::vector<FileBlockInfo> block_info(read_reply.block_info().begin(), read_reply.block_info().end());
   return block_info;
   // uint64_t size = read_reply.block_info_size();
@@ -70,13 +71,14 @@ std::vector<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, 
   // std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
 }
 
-std::vector<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, const char* buffer) {
+std::vector<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, uint64_t &bytes_write, const char* buffer) {
   WriteRequest write_request;
   write_request.set_name(filename);
   write_request.set_offset(offset);
   write_request.set_length(length);
   WriteReply write_reply;
   ClientContext context;
+
   Status status = stub_->WriteFile(&context, write_request, &write_reply);
   std::cout << __func__ << ": " << "write to file: "<< filename << ", offset: " << offset << ", length: " << length << std::endl;
   if (!status.ok()) {
@@ -85,6 +87,7 @@ std::vector<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename,
     return std::vector<FileBlockInfo>();
   }
   std::vector<FileBlockInfo> block_info(write_reply.block_info().begin(), write_reply.block_info().end());
+  bytes_write = write_reply.bytes_write();
   return block_info;
   // uint64_t size = write_reply.block_info_size();
   // std::cout << __func__ << ": " << size << " file data blocks info received." << std::endl;

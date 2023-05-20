@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(spongebob)
 # link_libraries("fuse")
 set (CMAKE_C_FLAGS "-Wall -Wno-deprecated-declarations -Wsign-compare")
-set (CMAKE_CXX_FLAGS "-g ${CMAKE_C_FLAGS} -std=c++11 -Wall -O0 -DTHREAD -D_FILE_OFFSET_BITS=64 -libverbs -lfuse")
+set (CMAKE_CXX_FLAGS "-g ${CMAKE_C_FLAGS} -std=c++14 -Wall -O0 -DTHREAD -D_FILE_OFFSET_BITS=64 -libverbs -lfuse3")
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/*.cpp)
