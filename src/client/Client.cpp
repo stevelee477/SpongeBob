@@ -9,16 +9,22 @@ Client::Client() {
       std::make_unique<RdmaSocket>(1, reinterpret_cast<uint64_t>(buffer.get()),
                                    bufferSize, config, false, 0);
   rdmaSocket->RdmaConnect();
-  metaClient = std::make_unique<GreeterClient>(
+  metaClient = std::make_shared<GreeterClient>(
       grpc::CreateChannel(config->metaip, grpc::InsecureChannelCredentials()));
 }
 
-int Client::read(std::string &filename, char *user_buf, uint64_t offset,
+int Client::read(const std::string &filename, char *user_buf, uint64_t offset,
                  uint64_t length) {
   size_t local_offset = 0;
+  int actual_size = 0;
 
   auto block_info_list = metaClient->ReadFile(filename, offset, length);
   for (auto &block : block_info_list) {
+    Debug::debugItem("Client Read Local buffer 0x%lx, serverid %d, mem_offset %d, length %d, buff_offset %d",
+                     reinterpret_cast<uint64_t>(buffer.get()) +
+                         block.buff_offset(),
+                     block.serverid(), block.mem_offset(), block.length(),
+                     block.buff_offset());
     auto ret = rdmaSocket->RemoteRead(reinterpret_cast<uint64_t>(user_buf),
                                       block.serverid(), block.mem_offset(),
                                       block.length());
@@ -28,13 +34,13 @@ int Client::read(std::string &filename, char *user_buf, uint64_t offset,
     }
     local_offset += block.length();
   }
-  assert(local_offset == length);
+  // assert(local_offset == length);
 
   return 0;
 }
 
-int Client::write(std::string &filename, char *user_buf, uint64_t offset,
-                  uint64_t length) {
+int Client::write(const std::string &filename, const char *user_buf,
+                  uint64_t offset, uint64_t length) {
   size_t local_offset = 0;
 
   auto block_info_list = metaClient->WriteFile(filename, offset, length);

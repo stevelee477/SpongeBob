@@ -11,15 +11,16 @@
 class Client {
 public:
   Client();
-  int read(std::string &filename, char *buffer, uint64_t offset,
+  int read(const std::string &filename, char *buffer, uint64_t offset,
            uint64_t length);
-  int write(std::string &filename, char *buffer, uint64_t offset,
+  int write(const std::string &filename, const char *buffer, uint64_t offset,
             uint64_t length);
   int create(std::string &filename);
-  int list(std::string &path);
+  // int list(std::string &path);
+  std::shared_ptr<GreeterClient> getMetaClient() { return metaClient; }
 
 private:
-  std::unique_ptr<GreeterClient> metaClient;
+  std::shared_ptr<GreeterClient> metaClient;
   std::unique_ptr<RdmaSocket> rdmaSocket;
   std::unique_ptr<char[]> buffer;
 };

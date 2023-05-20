@@ -35,16 +35,16 @@ int main(int argc, char **argv) {
     client.create(filename);
   }
 
-  char *buf = new char[1 << 15];
-  memset(buf, -1, 1 << 15);
+  char *buf = new char[1 * 1024 * 1024 * 1024];
+  // memset(buf, -1, 1 << 20);
 
   std::string filename = "test" + std::to_string(1) + ".txt";
-  for (int i = 0; i < 10000; i++)
+  for (int i = 0; i < 100000; i++)
     buf[i] = 0xcc;
-  client.write(filename, buf, 0, 10000);
-  for (int i = 0; i < 1000; i++)
+  client.write(filename, buf, 0, 20000);
+  for (int i = 0; i < 10000; i++)
     buf[i] = 0x00;
-  client.read(filename, buf, 0, 10000);
+  client.read(filename, buf, 0, 20000);
   cout << "read " << std::hex << static_cast<int>(buf[5000]) << endl;
 
   return 0;
