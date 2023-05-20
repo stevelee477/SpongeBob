@@ -136,7 +136,7 @@ static int fuse_write(const char *path, const char *buf, size_t size, off_t offs
 	const char* new_path = path + 1;
 	int res = size;
 	printf("%s: file path is %s\n", __func__, new_path);
-	printf("%s: write contents is %s\n", new_path, buf);
+	// printf("%s: write contents is %s\n", new_path, buf);
 
 	// lock_guard<mutex> lock(mtx);
 	// auto ret_list = spongebobfs->getMetaClient()->WriteFile(new_path, offset, size, buf);

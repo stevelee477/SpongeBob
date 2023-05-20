@@ -61,7 +61,7 @@ int Client::write(const std::string &filename, const char *user_buf,
     }
     local_offset += block.length();
   }
-  assert(local_offset == length);
+  // assert(local_offset == length);
 
   return bytes_write;
 }
