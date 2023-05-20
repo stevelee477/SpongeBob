@@ -36,7 +36,7 @@ int Client::read(const std::string &filename, char *user_buf, uint64_t offset,
   }
   // assert(local_offset == length);
 
-  return 0;
+  return bytes_read;
 }
 
 int Client::write(const std::string &filename, const char *user_buf,
@@ -63,7 +63,7 @@ int Client::write(const std::string &filename, const char *user_buf,
   }
   assert(local_offset == length);
 
-  return 0;
+  return bytes_write;
 }
 
 int Client::create(std::string &filename) {

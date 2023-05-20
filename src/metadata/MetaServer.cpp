@@ -262,12 +262,24 @@ public:
                   ReadDirectoryReply* reply) override {
     /* The file system only has root directory now. */
     std::string path = request->path();
-    auto root_inode = inode_table_->GetInode(0);
+    auto root_inode = inode_table_->GetInode(ROOT_INUM);
     if (root_inode == nullptr) {
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return Status::CANCELLED;
     }
     auto dentry_map = root_inode->GetDentryMap();
+    auto root_dentry = reply->add_dentry_info();
+    root_dentry->set_name(".");
+    root_dentry->set_inum(ROOT_INUM);
+    root_dentry->set_is_dir(true);
+    root_dentry->set_size(FILE_BLOCK_SIZE);
+
+    auto parent_dentry = reply->add_dentry_info();
+    parent_dentry->set_name("..");
+    parent_dentry->set_inum(ROOT_INUM);
+    parent_dentry->set_is_dir(true);
+    parent_dentry->set_size(FILE_BLOCK_SIZE);
+
     for (auto it = dentry_map.begin(); it != dentry_map.end(); ++it) {
       auto dentry_info = reply->add_dentry_info();
       auto file_inode = inode_table_->GetInode(it->second->GetInodeNum());
