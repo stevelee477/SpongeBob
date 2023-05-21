@@ -21,6 +21,9 @@ Configuration::Configuration() {
         ServerCount += 1;
     }
 	metaip = pt.get<std::string>("address.meta");
+	rdmaPort = pt.get<int>("address.rdma.port");
+	rdmaTcpPort = pt.get<int>("address.rdma.tcp");
+	std::cout << rdmaPort << " " << rdmaTcpPort << std::endl;
 }
 
 Configuration::~Configuration() {

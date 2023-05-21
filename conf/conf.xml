@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <address>
-	<meta>192.168.10.3:50051</meta>
+	<meta>192.168.10.3:50060</meta>
 	<storage>
 		<node>
 			<id>1</id>
@@ -11,4 +11,8 @@
 			<ip>192.168.10.4</ip>
 		</node>
 	</storage>
+	<rdma>
+		<tcp>56789</tcp>
+		<port>1</port>
+	</rdma>
 </address>

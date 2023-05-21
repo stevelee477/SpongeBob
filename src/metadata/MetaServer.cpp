@@ -374,7 +374,8 @@ private:
 
 void RunServer(uint16_t port) {
   auto conf = new Configuration();
-  std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
+  auto confPort = stoi(conf->metaip.substr(conf->metaip.find(':')+1, conf->metaip.size()));
+  std::string server_address = absl::StrFormat("0.0.0.0:%d", confPort);
   GreeterServiceImpl service(conf->getServerCount());
 
   grpc::EnableDefaultHealthCheckService(true);

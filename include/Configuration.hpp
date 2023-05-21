@@ -31,6 +31,8 @@ public:
 	unordered_map<uint16_t, string> getInstance();
 	int getServerCount();
 	string metaip;
+	int rdmaPort;
+	int rdmaTcpPort;
 };
 
 #endif

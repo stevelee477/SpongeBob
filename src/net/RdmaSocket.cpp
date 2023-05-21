@@ -44,7 +44,7 @@ std::string getIP() {
 }
 
 RdmaSocket::RdmaSocket(int _cqNum, uint64_t _mm, uint64_t _mmSize, Configuration* _conf, bool _isServer, uint8_t _Mode) :
-DeviceName(NULL), Port(1), ServerPort(5678), GidIndex(0),
+DeviceName(NULL), GidIndex(0),
 isRunning(true), isServer(_isServer), cqNum(_cqNum), cqPtr(0),
 mm(_mm), mmSize(_mmSize), conf(_conf), MaxNodeID(1), Mode(_Mode) {
 	/* Use multiple cq to parallelly process new request. */
@@ -54,6 +54,8 @@ mm(_mm), mmSize(_mmSize), conf(_conf), MaxNodeID(1), Mode(_Mode) {
 	/* Find my IP, and initialize my NodeID (At server side). */
 	/* NodeID at client side will be given on connection */
     ServerCount = conf->getServerCount();
+    Port = conf->rdmaPort;
+    ServerPort = conf->rdmaTcpPort;
     MaxNodeID = ServerCount + 1;
 	if (isServer) {
 		// char hname[128] = "192.168.1.3";
@@ -833,6 +835,8 @@ bool RdmaSocket::RdmaRead(uint16_t NodeID, uint64_t SourceBuffer, uint64_t DesBu
     wr.send_flags = IBV_SEND_SIGNALED;
     wr.wr.rdma.remote_addr = DesBuffer + peers[NodeID]->RegisteredMemory;
     wr.wr.rdma.rkey        = peers[NodeID]->rkey;
+
+    Debug::debugItem("Post RDMA_READ with remove address = %lx", wr.wr.rdma.remote_addr);
 
     if (ibv_post_send(peers[NodeID]->qp[TaskID], &wr, &wrBad)) {
         Debug::notifyError("Send with RDMA_READ failed.");
