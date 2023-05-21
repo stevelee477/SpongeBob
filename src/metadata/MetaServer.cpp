@@ -258,7 +258,7 @@ public:
     uint64_t start_addr = request->addr();
     uint64_t length = request->length();
     space_manager_[request->nodeid()] = std::make_shared<SpaceManager>(start_addr, start_addr + length - 1, FILE_BLOCK_SIZE, request->nodeid());
-    std::cout << "Fuck here\n";
+    // std::cout << "Hello here\n";
     // space_manager_->ResetSpaceRange(start_addr, length);
     // space_manager_ = std::make_shared<SpaceManager>(start_addr, length, FILE_BLOCK_SIZE);
     return Status::OK;
