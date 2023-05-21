@@ -44,8 +44,8 @@ public:
     inode_table_ = std::make_shared<InodeTable>(100);
     file_map_ = std::make_shared<FileMap>(100);
     //ligch: just for fuse tests
-    space_manager_[1] = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE, 1);
-    space_manager_[2] = std::make_shared<SpaceManager>(0, 1 << 20, FILE_BLOCK_SIZE, 2);
+    // space_manager_[1] = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE, 1);
+    // space_manager_[2] = std::make_shared<SpaceManager>(0, 1 << 20, FILE_BLOCK_SIZE, 2);
     // space_manager_ = std::make_shared<SpaceManager>(0, 1 << 30, FILE_BLOCK_SIZE, server_count);
   }
 
@@ -88,9 +88,10 @@ public:
     auto file_inode = inode_table_->GetInode(file_inum);
     assert(file_inode != nullptr);
 
-    if (start_offset + read_length - 1 > file_inode->GetSize()) {
+    if (start_offset + read_length > file_inode->GetSize()) {
       uint64_t old_read_length = read_length;
       read_length = file_inode->GetSize() - start_offset;
+      // std::cout << __func__ << ": file size is " << file_inode->GetSize() << std::endl;
       std::cout << __func__ << ": expected read size out of range." << std::endl;
       std::cout << __func__ << ": read length change from " << old_read_length << " to " << read_length << std::endl;
       // return Status::CANCELLED;
@@ -129,7 +130,7 @@ public:
       buff_offset += FILE_BLOCK_SIZE;
       to_read_length = 0;
     }
-    reply->set_bytes_read(read_length);
+    reply->set_bytes_read(read_length - to_read_length);
     return Status::OK;
   }
 
@@ -215,8 +216,8 @@ public:
       to_write_length = 0;
     }
 
-    file_inode->SetSize(start_offset + write_length - to_write_length - 1);
-    reply->set_bytes_write(write_length);
+    file_inode->SetSize(start_offset + write_length - to_write_length);
+    reply->set_bytes_write(write_length - to_write_length);
     return Status::OK;
   }
 
