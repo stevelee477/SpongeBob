@@ -23,9 +23,9 @@ struct dentry_info {
 };
 
 
-class GreeterClient {
+class MetadataClient {
 public:
-  GreeterClient(std::shared_ptr<grpc::Channel> channel);
+  MetadataClient(std::shared_ptr<grpc::Channel> channel);
   std::string SayHello(const std::string &user);
   std::vector<FileBlockInfo> ReadFile(const std::string &filename, uint64_t offset, uint64_t length, uint64_t &bytes_read, char* buffer=nullptr);
   std::vector<FileBlockInfo> WriteFile(const std::string &filename, uint64_t offset, uint64_t length, uint64_t &bytes_write, const char* buffer=nullptr);
@@ -37,5 +37,5 @@ public:
   int ReadDirectory(const std::string &path, std::vector<struct dentry_info>& dentry_list);
   int RegisterMemoryRegion(const uint64_t nodeid, const uint64_t addr, const uint64_t length);
 private:
-  std::unique_ptr<spongebob::Greeter::Stub> stub_;
+  std::unique_ptr<spongebob::Metadata::Stub> stub_;
 };

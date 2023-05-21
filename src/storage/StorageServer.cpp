@@ -28,6 +28,6 @@ StorageServer::StorageServer(std::string device, size_t size) {
     pool = std::make_unique<Pool>(device, size);
     rdmaSocket = std::make_unique<RdmaSocket>(2, pool->getMemoryBaseAddress(), pool->getSize(), config, true, 0);
     rdmaSocket->RdmaListen();
-    metaClient = std::make_unique<GreeterClient>(grpc::CreateChannel(config->metaip, grpc::InsecureChannelCredentials()));
+    metaClient = std::make_unique<MetadataClient>(grpc::CreateChannel(config->metaip, grpc::InsecureChannelCredentials()));
     metaClient->RegisterMemoryRegion(rdmaSocket->getNodeID(), pool->getMemoryBaseAddress(), pool->getSize());
 }

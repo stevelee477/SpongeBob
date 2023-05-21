@@ -1,9 +1,11 @@
+#include <cstdio>
+#include <cstring>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <iostream>
 
-constexpr size_t BUFFER_SIZE = 32;
+constexpr size_t BUFFER_SIZE = 2048;
 char buffer[BUFFER_SIZE];
 int main() {
 
@@ -34,8 +36,17 @@ int main() {
         return 1;
     }
     lseek(destFile, 0, SEEK_SET);
+    memset(buffer, 'a', BUFFER_SIZE);
+    // bytesRead = read(destFile, buffer, BUFFER_SIZE);
+    // std::cout << "bytesRead: " << bytesRead << std::endl;
+    // std::cout << std::endl;
+    // std::cout.write(buffer, bytesRead);
+    // write(STDOUT_FILENO, buffer, bytesRead);
     while((bytesRead = read(destFile, buffer, BUFFER_SIZE)) > 0) {
-        write(STDOUT_FILENO, buffer, bytesRead);
+        std::cout << "bytesRead: " << bytesRead << std::endl;
+        std::cout << std::endl;
+        // write(STDOUT_FILENO, buffer, bytesRead);
+        // write(STDOUT_FILENO, buffer, total_bytes_write);
     }
 
     close(srcFile);

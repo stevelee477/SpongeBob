@@ -8,12 +8,12 @@ using grpc::ClientContext;
 using grpc::Status;
 using namespace::spongebob;
 
-GreeterClient::GreeterClient(std::shared_ptr<Channel> channel)
-    : stub_(Greeter::NewStub(channel)) {}
+MetadataClient::MetadataClient(std::shared_ptr<Channel> channel)
+    : stub_(Metadata::NewStub(channel)) {}
 
 // Assembles the client's payload, sends it and presents the response back
 // from the server.
-std::string GreeterClient::SayHello(const std::string &user) {
+std::string MetadataClient::SayHello(const std::string &user) {
   // Data we are sending to the server.
   HelloRequest request;
   request.set_name(user);
@@ -38,7 +38,7 @@ std::string GreeterClient::SayHello(const std::string &user) {
   }
 }
 
-std::vector<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, uint64_t offset,
+std::vector<FileBlockInfo> MetadataClient::ReadFile(const std::string &filename, uint64_t offset,
                             uint64_t length, uint64_t &byted_read, char* buffer) {
   ReadRequest read_request;
   // int res = 0;
@@ -55,6 +55,7 @@ std::vector<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, 
     return std::vector<FileBlockInfo>();
   }
   byted_read = read_reply.bytes_read();
+  std::cout << __func__ << ": " << byted_read << " bytes read." << std::endl;
   std::vector<FileBlockInfo> block_info(read_reply.block_info().begin(), read_reply.block_info().end());
   return block_info;
   // uint64_t size = read_reply.block_info_size();
@@ -71,7 +72,7 @@ std::vector<FileBlockInfo> GreeterClient::ReadFile(const std::string &filename, 
   // std::cout << __func__ << ": " << "read file finished." << std::endl << std::endl;
 }
 
-std::vector<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, uint64_t &bytes_write, const char* buffer) {
+std::vector<FileBlockInfo> MetadataClient::WriteFile(const std::string &filename, uint64_t offset, uint64_t length, uint64_t &bytes_write, const char* buffer) {
   WriteRequest write_request;
   write_request.set_name(filename);
   write_request.set_offset(offset);
@@ -105,7 +106,7 @@ std::vector<FileBlockInfo> GreeterClient::WriteFile(const std::string &filename,
   // return 0;
 }
 
-int GreeterClient::CreateFile(const std::string &filename) {
+int MetadataClient::CreateFile(const std::string &filename) {
   CreateRequest create_request;
   create_request.set_name(filename);
   create_request.set_is_dir(false);
@@ -117,7 +118,7 @@ int GreeterClient::CreateFile(const std::string &filename) {
   return 0;
 }
 
-int GreeterClient::CreateDiretory(const std::string &path) {
+int MetadataClient::CreateDiretory(const std::string &path) {
   CreateRequest create_request;
   create_request.set_name(path);
   create_request.set_is_dir(true);
@@ -129,7 +130,7 @@ int GreeterClient::CreateDiretory(const std::string &path) {
   return 0;
 }
 
-int GreeterClient::OpenFile(const std::string &filename) {
+int MetadataClient::OpenFile(const std::string &filename) {
   OpenRequest open_request;
   open_request.set_name(filename);
   open_request.set_is_dir(false);
@@ -142,7 +143,7 @@ int GreeterClient::OpenFile(const std::string &filename) {
   return fd;
 }
 
-bool GreeterClient::CloseFile(int64_t fd) {
+bool MetadataClient::CloseFile(int64_t fd) {
   CloseRequest close_request;
   close_request.set_fd(fd);
   close_request.set_is_dir(false);
@@ -155,7 +156,7 @@ bool GreeterClient::CloseFile(int64_t fd) {
   return success;
 }
 
-bool GreeterClient::RemoveFile(const std::string &filename) {
+bool MetadataClient::RemoveFile(const std::string &filename) {
   RemoveRequest remove_request;
   remove_request.set_name(filename);
   remove_request.set_is_dir(false);
@@ -168,7 +169,7 @@ bool GreeterClient::RemoveFile(const std::string &filename) {
   return success;
 }
 
-int GreeterClient::ReadDirectory(const std::string &path, std::vector<struct dentry_info> &dir_list) {
+int MetadataClient::ReadDirectory(const std::string &path, std::vector<struct dentry_info> &dir_list) {
   ReadDirectoryRequest list_dir_request;
   list_dir_request.set_path(path);
   ReadDirectoryReply list_dir_reply;
@@ -190,7 +191,7 @@ int GreeterClient::ReadDirectory(const std::string &path, std::vector<struct den
   return 0;
 }
 
-int GreeterClient::RegisterMemoryRegion(uint64_t nodeid, uint64_t addr, uint64_t length) {
+int MetadataClient::RegisterMemoryRegion(uint64_t nodeid, uint64_t addr, uint64_t length) {
   RegisterMemoryRegionRequest register_memory_region_request;
   register_memory_region_request.set_nodeid(nodeid);
   register_memory_region_request.set_addr(addr);

@@ -127,7 +127,9 @@ static int fuse_read(const char *path, char *buf, size_t size, off_t offset, str
 	// 	size_t c = i % 26 + 'a';
 	// 	memcpy(buf + i, &c, sizeof(size_t));
 	// }
+	// memset(buf, 'a', size);
 	auto bytes_read = spongebobfs->read(new_path, buf, offset, size);
+	// printf("%s: %s\n", __func__, buf);
 	return bytes_read;
 }
 
@@ -209,10 +211,22 @@ static int fuse_setxattr (const char *path, const char *name, const char *value,
 }
 static int fuse_mkdir(const char *path, mode_t mode)
 {
+	bool res;
+	const char* new_path = path + 1;
+	res = spongebobfs->getMetaClient()->CreateDiretory(new_path);
+	if (!res) {
+		return -errno;
+	}
 	return 0;
 }
 static int fuse_rmdir(const char *path)
 {
+	bool res;
+	const char* new_path = path + 1;
+	res = spongebobfs->getMetaClient()->RemoveFile(new_path);
+	if (!res) {
+		return -errno;
+	}
 	return 0;
 }
 static int fuse_utimens(const char * path, const struct timespec tv[2]) {

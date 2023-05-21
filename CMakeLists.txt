@@ -145,7 +145,7 @@ endforeach()
 
 include_directories("/usr/include/fuse")
 # greeter_client.cc
-file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/testfuse/*.cpp)
+file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/fuse/*.cpp)
 foreach(GRPC_TESTSRC
   ${GRPC_TESTS_SOURCES})
   get_filename_component(GRPC_TESTSRC_NAME ${GRPC_TESTSRC} NAME_WE)

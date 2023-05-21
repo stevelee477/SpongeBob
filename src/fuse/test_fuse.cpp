@@ -25,7 +25,7 @@ using namespace std;
 mutex mtx;
 
 static struct fuse_operations fuse_oper;
-std::shared_ptr<GreeterClient> spongebobfs = nullptr;
+std::shared_ptr<MetadataClient> spongebobfs = nullptr;
 // char den_name_list[32][32];
 
 static int fuse_open(const char *path, struct fuse_file_info *fi)
@@ -81,6 +81,7 @@ static int fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	const char* new_path = path + 1;
 	vector<struct dentry_info> dentry_list;
 	int success =  spongebobfs->ReadDirectory(new_path, dentry_list);
+
 	struct stat st;
 	for (auto d_info: dentry_list) {
 		memset(&st, 0, sizeof(st));
@@ -222,7 +223,7 @@ static int fuse_utimens(const char * path, const struct timespec tv[2]) {
 
 int main(int argc, char* argv[])
 {
-	spongebobfs = make_shared<GreeterClient>(grpc::CreateChannel("localhost:50055", grpc::InsecureChannelCredentials()));
+	spongebobfs = make_shared<MetadataClient>(grpc::CreateChannel("localhost:50055", grpc::InsecureChannelCredentials()));
 	fuse_oper.access = fuse_access;
 	fuse_oper.getattr = fuse_getattr;
 	fuse_oper.readdir = fuse_readdir;

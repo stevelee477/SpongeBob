@@ -38,9 +38,9 @@ inline int randInt(int n) {
 }
 
 // Logic and data behind the server's behavior.
-class GreeterServiceImpl final : public Greeter::Service {
+class MetadataServiceImpl final : public Metadata::Service {
 public:
-  GreeterServiceImpl(int _server_count = 1) : server_count(_server_count) {
+  MetadataServiceImpl(int _server_count = 1) : server_count(_server_count) {
     inode_table_ = std::make_shared<InodeTable>(100);
     file_map_ = std::make_shared<FileMap>(100);
     //ligch: just for fuse tests
@@ -237,8 +237,13 @@ public:
       reply->set_inum(dentry->GetInodeNum());
       return Status::OK;
     }
+    uint64_t new_inum;
+    if (!request->is_dir()) {
+      new_inum = inode_table_->AllocateFileInode();
+    } else {
+      new_inum = inode_table_->AllocateDirInode();
+    }
 
-    auto new_inum = inode_table_->AllocateFileInode();
     std::cout << __func__ << ": alloc inode " << new_inum << " to file " << filename << std::endl;
     std::cout << __func__ << ": inode table current size: " << inode_table_->GetCurSize() << std::endl;
     root_inode->AddDentry(filename, new_inum);
@@ -355,7 +360,7 @@ public:
 
 private:
   uint64_t CreateFile_(const std::string &name, bool is_dir) {
-    auto root_inode = inode_table_->GetInode(0);
+    auto root_inode = inode_table_->GetInode(ROOT_INUM);
     if (root_inode == nullptr) {
       std::cerr << __func__ << ": root dir's inode doesn't exist." << std::endl;
       return inode_table_->GetTotalSize() + 1 ;
@@ -376,7 +381,7 @@ void RunServer(uint16_t port) {
   auto conf = new Configuration();
   auto confPort = stoi(conf->metaip.substr(conf->metaip.find(':')+1, conf->metaip.size()));
   std::string server_address = absl::StrFormat("0.0.0.0:%d", confPort);
-  GreeterServiceImpl service(conf->getServerCount());
+  MetadataServiceImpl service(conf->getServerCount());
 
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();

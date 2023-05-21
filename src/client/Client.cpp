@@ -10,7 +10,7 @@ Client::Client() {
       std::make_unique<RdmaSocket>(1, reinterpret_cast<uint64_t>(buffer.get()),
                                    bufferSize, config, false, 0);
   rdmaSocket->RdmaConnect();
-  metaClient = std::make_shared<GreeterClient>(
+  metaClient = std::make_shared<MetadataClient>(
       grpc::CreateChannel(config->metaip, grpc::InsecureChannelCredentials()));
 }
 
@@ -35,6 +35,11 @@ int Client::read(const std::string &filename, char *user_buf, uint64_t offset,
     local_offset += block.length();
   }
   // assert(local_offset == length);
+
+  for (auto block : block_info_list) {
+    std::cout << block.serverid() << " " << block.block_idx() << " " << block.mem_offset() << " " << block.length() << " " << block.buff_offset() << std::endl;
+  }
+  std::cout << std::endl << std::endl;
 
   return bytes_read;
 }
@@ -62,6 +67,11 @@ int Client::write(const std::string &filename, const char *user_buf,
     local_offset += block.length();
   }
   // assert(local_offset == length);
+
+  for (auto block : block_info_list) {
+    std::cout << block.serverid() << " " << block.block_idx() << " " << block.mem_offset() << " " << block.length() << " " << block.buff_offset() << std::endl;
+  }
+  std::cout << std::endl << std::endl;
 
   return bytes_write;
 }

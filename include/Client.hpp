@@ -17,10 +17,10 @@ public:
             uint64_t length);
   int create(std::string &filename);
   // int list(std::string &path);
-  std::shared_ptr<GreeterClient> getMetaClient() { return metaClient; }
+  std::shared_ptr<MetadataClient> getMetaClient() { return metaClient; }
 
 private:
-  std::shared_ptr<GreeterClient> metaClient;
+  std::shared_ptr<MetadataClient> metaClient;
   std::unique_ptr<RdmaSocket> rdmaSocket;
   std::unique_ptr<char[]> buffer;
 };

@@ -29,5 +29,5 @@ public:
 private:
     std::unique_ptr<RdmaSocket> rdmaSocket;
     std::unique_ptr<Pool> pool;
-    std::unique_ptr<GreeterClient> metaClient;
+    std::unique_ptr<MetadataClient> metaClient;
 };
