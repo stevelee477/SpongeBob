@@ -30,7 +30,7 @@ bool Inode::AddDentry(const std::string &name, uint64_t inum) {
 bool Inode::DeleteDentry(const std::string &name) {
     uint64_t hash = std::hash<std::string>{}(name);
     if (children_.find(hash) == children_.end()) {
-        std::cout << __func__ << ": " << name << " doesn't exist. There's no need to delete." << std::endl;
+        Debug::notifyInfo("%s: %s doesn't exist. There's no need to delete.", __func__, name.c_str());
         return false;
     }
     children_.erase(hash);
@@ -40,7 +40,7 @@ bool Inode::DeleteDentry(const std::string &name) {
 std::shared_ptr<Dentry> Inode::GetDentry(const std::string &name) {
     uint64_t hash = std::hash<std::string>{}(name);
     if (children_.find(hash) == children_.end()) {
-        std::cout << __func__ << ": " << name << " doesn't exist. " << std::endl;
+        Debug::notifyInfo("%s: %s doesn't exist.", __func__, name.c_str());
         return nullptr;
     }
     return children_[hash];
@@ -65,7 +65,7 @@ InodeTable::InodeTable(uint64_t size): total_size_(size), cur_size_(1) {
     //     vec[i] = i;
     // }
     free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin(), vec.end());
-    std::cout << __func__ << ": " << total_size_ << " inodes in inode table." << std::endl;
+    Debug::debugItem("%s: %lu inodes in inode table.", __func__, total_size_);
     CreateRootDir();
 }
 
@@ -125,15 +125,7 @@ FileMap::FileMap(uint64_t size): total_size_(size) {
     std::vector<uint64_t> vec(total_size_ + 3);
     std::iota(vec.begin(), vec.end(), 1);
     fd_free_list_ = std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>(vec.begin() + 3, vec.end());
-    std::cout << __func__ << ": " << fd_free_list_.size() << " fds in fd list." << std::endl;
-    // while (!fd_free_list_.empty()) {
-    //     std::cout << fd_free_list_.top() << " ";
-    //     fd_free_list_.pop();
-    // }
-    // for (auto fd: fd_free_list_) {
-    //     fd_free_list_
-    //     std::cout << fd << " ";
-    // }
+    Debug::debugItem("%s: %lu fds in fd list.", __func__, fd_free_list_.size());
 }
 
 
@@ -145,7 +137,7 @@ int FileMap::AllocateFD() {
         return -1;
     }
     uint64_t new_fd = fd_free_list_.top();
-    std::cout << __func__ << ": allocate new fd " << new_fd << std::endl;
+    Debug::debugItem("%s: allocate new fd %ulld", __func__, new_fd);
     fd_free_list_.pop();
     fd_used_set_.insert(new_fd);
     file_map_lock_.unlock();
@@ -161,7 +153,7 @@ bool FileMap::ReclaimFD(uint64_t fd) {
     }
     fd_used_set_.erase(fd);
     fd_free_list_.push(fd);
-    std::cout << __func__ << ": reclaim fd " << fd << std::endl;
+    Debug::debugItem("%s: reclaim fd %ulld", __func__, fd);
     file_map_lock_.unlock();
     return true;
 }

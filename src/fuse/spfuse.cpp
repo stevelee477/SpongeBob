@@ -75,8 +75,6 @@ static int fuse_release(const char *path, struct fuse_file_info *fi)
 static int fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi)
 {
-	// cout << "readdir" << endl;
-	// filler(buf, "fuse_readdir", NULL, 0);
 	const char* new_path = path + 1;
 	vector<struct dentry_info> dentry_list;
 	int success =  spongebobfs->getMetaClient()->ReadDirectory(new_path, dentry_list);
@@ -90,17 +88,7 @@ static int fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			break;
 		}
 	}
-	// for (int i = 0; i < dentry_list.size(); ++i) {
-	// 	memset(&st, 0, sizeof(st));
-	// 	// st.st_ino = d_info.inum;
-	// 	st.st_mode = dentry_list[i].is_dir ? S_IFDIR: S_IFREG;
-	// 	// std::cout << __func__ << ": path is " << dentry_list[i].name << std::endl;
-	// 	strcpy(den_name_list[i], dentry_list[i].name.c_str());
-	// 	printf("readdir: %s, path lenth: %lu\n", den_name_list[i], dentry_list[i].name.length());
-	// 	if (filler(buf, den_name_list[i] + 1, &st, 0)) {
-	// 		break;
-	// 	}
-	// }
+
 	return 0;
 }
 
@@ -109,27 +97,10 @@ static int fuse_read(const char *path, char *buf, size_t size, off_t offset, str
 	const char* new_path = path + 1;
 	int res = 0;
 	std::string str = "Spongebob Read.";
-	printf("%s: file path is %s.\n", __func__, new_path);
-	// res = nrfsRead(fs, (nrfsFile)path, buf, (uint64_t)size, (uint64_t)offset);
-	// auto ret_list = spongebobfs->getMetaClient()->ReadFile(new_path, offset, size, buf);
-	// std::cout << __func__ << ": Received the following block info..." << std::endl;
-	// for (auto cur_block : ret_list) {
-	// 	// std::cout << cur_block.get_serverid();
-	// 	std::cout << cur_block.block_idx() << ", ";
-	// 	std::cout << cur_block.serverid() << ", ";
-	// 	std::cout << cur_block.mem_offset() << ", ";
-	// 	std::cout << cur_block.length() << ", ";
-	// 	std::cout << cur_block.buff_offset() << std::endl;
-	// }
+	Debug::debugItem("%s: file path is %s size is %d offset is %d", __func__, new_path, size, offset);
 
-	// // strcpy(buf, str.c_str());
-	// for (size_t i = 0; i < size; ++i) {
-	// 	size_t c = i % 26 + 'a';
-	// 	memcpy(buf + i, &c, sizeof(size_t));
-	// }
-	// memset(buf, 'a', size);
 	auto bytes_read = spongebobfs->read(new_path, buf, offset, size);
-	// printf("%s: %s\n", __func__, buf);
+
 	return bytes_read;
 }
 
@@ -137,21 +108,10 @@ static int fuse_write(const char *path, const char *buf, size_t size, off_t offs
 {
 	const char* new_path = path + 1;
 	int res = size;
-	printf("%s: file path is %s\n", __func__, new_path);
-	// printf("%s: write contents is %s\n", new_path, buf);
+	Debug::debugItem("%s: file path is %s size is %d offset is %d", __func__, new_path, size, offset);
 
-	// lock_guard<mutex> lock(mtx);
-	// auto ret_list = spongebobfs->getMetaClient()->WriteFile(new_path, offset, size, buf);
-	// std::cout << __func__ << ": Received the following block info..." << std::endl;
-	// for (auto cur_block : ret_list) {
-	// 	// std::cout << cur_block.get_serverid();
-	// 	std::cout << cur_block.block_idx() << ", ";
-	// 	std::cout << cur_block.serverid() << ", ";
-	// 	std::cout << cur_block.mem_offset() << ", ";
-	// 	std::cout << cur_block.length() << ", ";
-	// 	std::cout << cur_block.buff_offset() << std::endl;
-	// }
 	auto bytes_write = spongebobfs->write(new_path, const_cast<char*>(buf), offset, size);
+
 	return bytes_write;
 }
 

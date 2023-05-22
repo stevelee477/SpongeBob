@@ -24,6 +24,7 @@
 #include "spacemanager.hpp"
 #include "spongebob.grpc.pb.h"
 #include "spongebob.pb.h"
+#include "debug.hpp"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -91,9 +92,8 @@ public:
     if (start_offset + read_length > file_inode->GetSize()) {
       uint64_t old_read_length = read_length;
       read_length = file_inode->GetSize() - start_offset;
-      // std::cout << __func__ << ": file size is " << file_inode->GetSize() << std::endl;
-      std::cout << __func__ << ": expected read size out of range." << std::endl;
-      std::cout << __func__ << ": read length change from " << old_read_length << " to " << read_length << std::endl;
+      Debug::debugItem("%s: expected read size out of range.\n", __func__);
+      Debug::debugItem("%s: read length change from %lu to %lu\n", __func__, old_read_length, read_length);
       // return Status::CANCELLED;
     }
 
@@ -147,7 +147,7 @@ public:
 
     /* File doen't exist, create it. */
     if (file_dentry == nullptr) {
-      std::cout << __func__ << ": file " << file_name << " not exists. Create..." << std::endl;
+      Debug::notifyInfo("%s: file %s not exists. Create...\n", __func__, file_name.c_str());
       CreateFile_(file_name, false);
       file_dentry = root_inode->GetDentry(file_name);
     }
@@ -181,7 +181,7 @@ public:
         uint64_t block_nr = space_manager_[server_id]->AllocateOneBlock();
         file_inode->AppendFileBlockInfo(server_id, block_nr * FILE_BLOCK_SIZE, 0, block_nr);
       }
-      std::cout << new_blocks_num << " blocks allocated to file " << file_name << std::endl;
+      // std::cout << new_blocks_num << " blocks allocated to file " << file_name << std::endl;
     }
 
     if (start_offset & FILE_BLOCK_MASK) {
@@ -233,7 +233,7 @@ public:
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) != nullptr) {
       uint64_t inum = dentry->GetInodeNum();
-      std::cout << __func__ << ": file " << filename << " already exist, inum " << inum << std::endl;
+      Debug::notifyInfo("%s: file %s already exist, inum %lu\n", __func__, filename.c_str(), inum);
       reply->set_inum(dentry->GetInodeNum());
       return Status::OK;
     }
@@ -244,8 +244,8 @@ public:
       new_inum = inode_table_->AllocateDirInode();
     }
 
-    std::cout << __func__ << ": alloc inode " << new_inum << " to file " << filename << std::endl;
-    std::cout << __func__ << ": inode table current size: " << inode_table_->GetCurSize() << std::endl;
+    Debug::debugItem("%s: alloc inode %lu to file %s\n", __func__, new_inum, filename.c_str());
+    Debug::debugItem("%s: inode table current size: %lu\n", __func__, inode_table_->GetCurSize());
     root_inode->AddDentry(filename, new_inum);
     reply->set_inum(new_inum);
 
@@ -254,7 +254,7 @@ public:
 
   Status RegisterMemoryRegion(ServerContext* context, const RegisterMemoryRegionRequest* request,
                   RegisterMemoryRegionReply* reply) override {
-    std::cout << "RegisterMemoryRegion: " << request->nodeid() << " 0x" << std::hex << request->addr() << std::dec << " Size: " << request->length() << std::endl;
+    Debug::notifyInfo("RegisterMemoryRegion: %d 0x%lx Size: %lu\n", request->nodeid(), request->addr(), request->length());
     uint64_t start_addr = request->addr();
     uint64_t length = request->length();
     space_manager_[request->nodeid()] = std::make_shared<SpaceManager>(start_addr, start_addr + length - 1, FILE_BLOCK_SIZE, request->nodeid());
@@ -308,15 +308,15 @@ public:
     }
 
     auto filename = request->name();
-    std::cout << __func__ << ": start to open file " << filename << std::endl;
+    Debug::notifyInfo("%s: start to open file %s\n", __func__, filename.c_str());
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) == nullptr) {
-      std::cout << __func__ << ": file " << filename << " doesn't exist, start to create." << std::endl;
+      Debug::notifyInfo("%s: file %s doesn't exist, start to create.\n", __func__, filename.c_str());
       CreateFile_(filename, false);
     }
 
     auto new_fd = file_map_->AllocateFD();
-    std::cout << __func__ << ": alloc fd " << new_fd << std::endl;
+    Debug::notifyInfo("%s: alloc fd %lu\n", __func__, new_fd);
     reply->set_fd(new_fd);
     return Status::OK;
   }
@@ -326,7 +326,7 @@ public:
     int64_t fd = request->fd();
     bool success = file_map_->ReclaimFD(fd);
     reply->set_success(success);
-    std::cout << __func__ << ": close file, fd is " << fd << std::endl;
+    Debug::notifyInfo("%s: close file, fd is %lu\n", __func__, fd);
     return Status::OK;
   }
 
@@ -343,7 +343,7 @@ public:
     auto filename = request->name();
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) == nullptr) {
-      std::cout << __func__ << ": file " << filename << " doesn't exist." << std::endl;
+      Debug::notifyInfo("%s: file %s doesn't exist.\n", __func__, filename.c_str());
       reply->set_success(false);
       return Status::OK;
     }
@@ -353,7 +353,7 @@ public:
     for (auto &sm : space_manager_)
       sm.second->ReclaimInodeSpace(inode_table_->GetInode(inum));
     inode_table_->DeleteInode(inum);
-    std::cout << __func__ << ": " << filename << " is removed. Inode" << inum << " is reclaimed." << std::endl;
+    Debug::notifyInfo("%s: file %s is removed. Inode %lu is reclaimed.\n", __func__, filename.c_str(), inum);
     reply->set_success(true);
     return Status::OK;
   }
@@ -393,7 +393,7 @@ void RunServer(uint16_t port) {
   builder.RegisterService(&service);
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+  Debug::notifyInfo("Server listening on %s\n", server_address.c_str());
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
