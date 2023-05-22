@@ -23,7 +23,6 @@ Configuration::Configuration() {
 	metaip = pt.get<std::string>("address.meta");
 	rdmaPort = pt.get<int>("address.rdma.port");
 	rdmaTcpPort = pt.get<int>("address.rdma.tcp");
-	std::cout << rdmaPort << " " << rdmaTcpPort << std::endl;
 }
 
 Configuration::~Configuration() {
