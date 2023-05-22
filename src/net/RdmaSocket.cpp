@@ -1,9 +1,3 @@
-/***********************************************************************
-*
-*
-* Tsinghua Univ, 2016
-*
-***********************************************************************/
 #include "RdmaSocket.hpp"
 #include "debug.hpp"
 using namespace std;
@@ -15,17 +9,17 @@ std::string getIP() {
     int s;
     char host[NI_MAXHOST];
 
-    if (getifaddrs(&ifaddr) == -1) 
+    if (getifaddrs(&ifaddr) == -1)
     {
         perror("getifaddrs");
         exit(EXIT_FAILURE);
     }
 
 
-    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) 
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
     {
         if (ifa->ifa_addr == NULL)
-            continue;  
+            continue;
 
         s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
 
@@ -838,7 +832,7 @@ bool RdmaSocket::RdmaRead(uint16_t NodeID, uint64_t SourceBuffer, uint64_t DesBu
 
     Debug::debugItem("Post RDMA_READ with remove address = %lx", wr.wr.rdma.remote_addr);
 
-    if (ibv_post_send(peers[NodeID]->qp[TaskID], &wr, &wrBad)) {
+    if ((peers[NodeID]->qp[TaskID], &wr, &wrBad)) {
         Debug::notifyError("Send with RDMA_READ failed.");
         return false;
     }

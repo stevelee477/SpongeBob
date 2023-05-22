@@ -229,9 +229,27 @@ static int fuse_rmdir(const char *path)
 	}
 	return 0;
 }
+
 static int fuse_utimens(const char * path, const struct timespec tv[2]) {
 	return 0;
 }
+
+static int fuse_truncate(const char *path, off_t length)
+{
+	return 0;
+}
+
+static int fuse_fgetattr(const char *path, struct stat *stat_buf, struct fuse_file_info *fi)
+{
+	return 0;
+}
+
+static int fuse_fallocate(const char *path, int mode, off_t offset, off_t len, struct fuse_file_info *fi)
+{
+	return 0;
+}
+
+
 
 int main(int argc, char* argv[])
 {
@@ -252,7 +270,9 @@ int main(int argc, char* argv[])
 	fuse_oper.flush = fuse_flush;
 	fuse_oper.mkdir = fuse_mkdir;
 	fuse_oper.rmdir = fuse_rmdir;
-
+	fuse_oper.fgetattr = fuse_fgetattr;
+	fuse_oper.fallocate = fuse_fallocate;
+	// fuse_oper.truncate = fuse_truncate;
 	// fs = nrfsConnect("default", 0, 0);
 	fuse_main(argc, argv, &fuse_oper, NULL);
 }
