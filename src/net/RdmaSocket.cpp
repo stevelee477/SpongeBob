@@ -832,7 +832,7 @@ bool RdmaSocket::RdmaRead(uint16_t NodeID, uint64_t SourceBuffer, uint64_t DesBu
 
     Debug::debugItem("Post RDMA_READ with remove address = %lx", wr.wr.rdma.remote_addr);
 
-    if ((peers[NodeID]->qp[TaskID], &wr, &wrBad)) {
+    if (ibv_post_send(peers[NodeID]->qp[TaskID], &wr, &wrBad)) {
         Debug::notifyError("Send with RDMA_READ failed.");
         return false;
     }

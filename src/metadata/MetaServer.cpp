@@ -233,7 +233,7 @@ public:
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) != nullptr) {
       uint64_t inum = dentry->GetInodeNum();
-      Debug::notifyInfo("%s: file %s already exist, inum %lu\n", __func__, filename.c_str(), inum);
+      Debug::notifyInfo("%s: file %s already exist, inum %lu", __func__, filename.c_str(), inum);
       reply->set_inum(dentry->GetInodeNum());
       return Status::OK;
     }
@@ -254,7 +254,7 @@ public:
 
   Status RegisterMemoryRegion(ServerContext* context, const RegisterMemoryRegionRequest* request,
                   RegisterMemoryRegionReply* reply) override {
-    Debug::notifyInfo("RegisterMemoryRegion: %d 0x%lx Size: %lu\n", request->nodeid(), request->addr(), request->length());
+    Debug::notifyInfo("RegisterMemoryRegion: %d 0x%lx Size: %lu", request->nodeid(), request->addr(), request->length());
     uint64_t start_addr = request->addr();
     uint64_t length = request->length();
     space_manager_[request->nodeid()] = std::make_shared<SpaceManager>(start_addr, start_addr + length - 1, FILE_BLOCK_SIZE, request->nodeid());
@@ -308,15 +308,15 @@ public:
     }
 
     auto filename = request->name();
-    Debug::notifyInfo("%s: start to open file %s\n", __func__, filename.c_str());
+    Debug::notifyInfo("%s: start to open file %s", __func__, filename.c_str());
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) == nullptr) {
-      Debug::notifyInfo("%s: file %s doesn't exist, start to create.\n", __func__, filename.c_str());
+      Debug::notifyInfo("%s: file %s doesn't exist, start to create.", __func__, filename.c_str());
       CreateFile_(filename, false);
     }
 
     auto new_fd = file_map_->AllocateFD();
-    Debug::notifyInfo("%s: alloc fd %lu\n", __func__, new_fd);
+    Debug::notifyInfo("%s: alloc fd %lu", __func__, new_fd);
     reply->set_fd(new_fd);
     return Status::OK;
   }
@@ -326,7 +326,7 @@ public:
     int64_t fd = request->fd();
     bool success = file_map_->ReclaimFD(fd);
     reply->set_success(success);
-    Debug::notifyInfo("%s: close file, fd is %lu\n", __func__, fd);
+    Debug::notifyInfo("%s: close file, fd is %lu", __func__, fd);
     return Status::OK;
   }
 
@@ -343,7 +343,7 @@ public:
     auto filename = request->name();
     std::shared_ptr<Dentry> dentry;
     if ((dentry = root_inode->GetDentry(filename)) == nullptr) {
-      Debug::notifyInfo("%s: file %s doesn't exist.\n", __func__, filename.c_str());
+      Debug::notifyInfo("%s: file %s doesn't exist.", __func__, filename.c_str());
       reply->set_success(false);
       return Status::OK;
     }
@@ -353,7 +353,7 @@ public:
     for (auto &sm : space_manager_)
       sm.second->ReclaimInodeSpace(inode_table_->GetInode(inum));
     inode_table_->DeleteInode(inum);
-    Debug::notifyInfo("%s: file %s is removed. Inode %lu is reclaimed.\n", __func__, filename.c_str(), inum);
+    Debug::notifyInfo("%s: file %s is removed. Inode %lu is reclaimed.", __func__, filename.c_str(), inum);
     reply->set_success(true);
     return Status::OK;
   }
@@ -393,7 +393,7 @@ void RunServer(uint16_t port) {
   builder.RegisterService(&service);
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  Debug::notifyInfo("Server listening on %s\n", server_address.c_str());
+  Debug::notifyInfo("Server listening on %s", server_address.c_str());
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
