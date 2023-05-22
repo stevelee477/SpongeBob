@@ -119,6 +119,10 @@ target_link_libraries(storageserver
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
+find_package(MPI REQUIRED)
+set (CMAKE_C_COMPILER ${MPI_C_COMPILER})
+set (CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
+
 # include_directories("/usr/include/fuse3")
 include_directories("/usr/include/fuse")
 file(GLOB GRPC_TESTS_SOURCES ${PROJECT_SOURCE_DIR}/src/test/*.cc ${PROJECT_SOURCE_DIR}/src/test/*.cpp)

@@ -13,7 +13,7 @@
 #include <iostream>
 
 
-#define FILE_BLOCK_SIZE (1 << 12)
+#define FILE_BLOCK_SIZE (1 << 20)
 #define FILE_BLOCK_MASK (FILE_BLOCK_SIZE - 1)
 
 
