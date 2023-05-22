@@ -1,5 +1,6 @@
 #include "MetaClient.hpp"
 #include "spongebob.pb.h"
+#include "debug.hpp"
 #include <cstdint>
 #include <string>
 
@@ -55,7 +56,7 @@ std::vector<FileBlockInfo> MetadataClient::ReadFile(const std::string &filename,
     return std::vector<FileBlockInfo>();
   }
   byted_read = read_reply.bytes_read();
-  std::cout << __func__ << ": " << byted_read << " bytes read." << std::endl;
+  Debug::debugItem("%s: Read %lu bytes from file %s.", __func__, byted_read, filename.c_str());
   std::vector<FileBlockInfo> block_info(read_reply.block_info().begin(), read_reply.block_info().end());
   return block_info;
   // uint64_t size = read_reply.block_info_size();
@@ -81,7 +82,8 @@ std::vector<FileBlockInfo> MetadataClient::WriteFile(const std::string &filename
   ClientContext context;
 
   Status status = stub_->WriteFile(&context, write_request, &write_reply);
-  std::cout << __func__ << ": " << "write to file: "<< filename << ", offset: " << offset << ", length: " << length << std::endl;
+  // std::cout << __func__ << ": " << "write to file: "<< filename << ", offset: " << offset << ", length: " << length << std::endl;
+  // Debug::
   if (!status.ok()) {
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
@@ -114,7 +116,7 @@ int MetadataClient::CreateFile(const std::string &filename) {
   ClientContext context;
 
   Status status = stub_->CreateFile(&context, create_request, &create_reply);
-  std::cout << __func__ << ": create file " << filename << ", inum " << create_reply.inum() << std::endl;
+  // std::cout << __func__ << ": create file " << filename << ", inum " << create_reply.inum() << std::endl;
   return 0;
 }
 
@@ -139,7 +141,7 @@ int MetadataClient::OpenFile(const std::string &filename) {
 
   Status status = stub_->OpenFile(&context, open_request, &open_reply);
   int fd = open_reply.fd();
-  std::cout << __func__ << ": open file " << filename << ", fd " << fd << std::endl;
+  // std::cout << __func__ << ": open file " << filename << ", fd " << fd << std::endl;
   return fd;
 }
 
@@ -152,7 +154,7 @@ bool MetadataClient::CloseFile(int64_t fd) {
 
   Status status = stub_->CloseFile(&context, close_request, &close_reply);
   bool success  = close_reply.success();
-  std::cout << __func__ << ": close file fd " << fd << ", status " << success << std::endl;
+  // std::cout << __func__ << ": close file fd " << fd << ", status " << success << std::endl;
   return success;
 }
 
@@ -165,7 +167,7 @@ bool MetadataClient::RemoveFile(const std::string &filename) {
 
   Status status = stub_->RemoveFile(&context, remove_request, &remove_reply);
   bool success  = remove_reply.success();
-  std::cout << __func__ << ": remove file " << filename << ", status " << success << std::endl;
+  // std::cout << __func__ << ": remove file " << filename << ", status " << success << std::endl;
   return success;
 }
 
@@ -185,8 +187,8 @@ int MetadataClient::ReadDirectory(const std::string &path, std::vector<struct de
   for (auto d_info: list_dir_reply.dentry_info()) {
     std::string name = d_info.name();
     dir_list.push_back({name, d_info.is_dir(), d_info.inum(), d_info.size()});
-    d_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
-    std::cout << d_info.name() << ", " << d_info.inum() << ", " << d_info.size() << std::endl;
+    // d_info.is_dir() ? std::cout << "directory, " : std::cout << "file: ";
+    // std::cout << d_info.name() << ", " << d_info.inum() << ", " << d_info.size() << std::endl;
   }
   return 0;
 }

@@ -6,6 +6,7 @@
 #include "absl/strings/str_format.h"
 
 #include "StorageServer.hpp"
+#include "debug.hpp"
 
 std::unique_ptr<StorageServer> storageserver;
 
@@ -20,7 +21,6 @@ void Stop (int signo) {
 
 int main(int argc, char *argv[]) {
     signal(SIGINT, Stop);
-    std::cout << "Hello, world!" << std::endl;
     absl::ParseCommandLine(argc, argv);
     storageserver = std::make_unique<StorageServer>(absl::GetFlag(FLAGS_dax_dev).c_str(), absl::GetFlag(FLAGS_dax_size) * 1024 * 1024);
     while (true) {

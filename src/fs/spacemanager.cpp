@@ -1,4 +1,5 @@
 #include "spacemanager.hpp"
+#include "debug.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <numeric>
@@ -47,7 +48,7 @@ std::vector<uint64_t> SpaceManager::AllocateSpace(uint64_t length) {
 }
 
 uint64_t SpaceManager::AllocateOneBlock() {
-    std::cout << "Allocate one block @" << server_id_ << std::endl;
+    Debug::debugItem("Allocate one block @%d", server_id_);
     space_lock_.lock();
     uint64_t block_nr = free_list_.top();
     free_list_.pop();
@@ -64,14 +65,15 @@ bool SpaceManager::ReclaimInodeSpace(std::shared_ptr<Inode> inode) {
     }
     space_lock_.lock();
     auto block_info_list = inode->GetBlockInfoList();
-    std::cout << __func__ << ": start to reclaim space from inode " << inode->GetInodeNum() << std::endl;
+    std::cout << __func__ << ": start to reclaim space from inode " << inode->GetInodeNum() << "@" << server_id_ << std::endl;
     uint64_t total = 0;
 
     for (auto block_info: block_info_list) {
         uint64_t server_id = block_info.server_id;
         // (void) server_id;
-        if (server_id != server_id_)
+        if (server_id != server_id_) {
             continue;
+        }
         uint64_t block_nr = block_info.block_nr;
         std::cout << block_nr << " ";
         free_list_.push(block_nr);

@@ -34,12 +34,6 @@ int Client::read(const std::string &filename, char *user_buf, uint64_t offset,
     }
     local_offset += block.length();
   }
-  // assert(local_offset == length);
-
-  for (auto block : block_info_list) {
-    std::cout << block.serverid() << " " << block.block_idx() << " " << block.mem_offset() << " " << block.length() << " " << block.buff_offset() << std::endl;
-  }
-  std::cout << std::endl << std::endl;
 
   return bytes_read;
 }
@@ -66,12 +60,6 @@ int Client::write(const std::string &filename, const char *user_buf,
     }
     local_offset += block.length();
   }
-  // assert(local_offset == length);
-
-  for (auto block : block_info_list) {
-    std::cout << block.serverid() << " " << block.block_idx() << " " << block.mem_offset() << " " << block.length() << " " << block.buff_offset() << std::endl;
-  }
-  std::cout << std::endl << std::endl;
 
   return bytes_write;
 }
